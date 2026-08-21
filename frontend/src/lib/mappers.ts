@@ -69,7 +69,7 @@ export function mapApplicationResponse(dto: JobApplicationResponseDto): JobAppli
     referralNotes: dto.referralNotes ?? undefined,
     recruiterName: dto.recruiterName ?? undefined,
     recruiterEmail: dto.recruiterEmail ?? undefined,
-    priorityLevel: (dto.priorityLevel && API_TO_PRIORITY[dto.priorityLevel]) ?? 'Medium',
+    priorityLevel: dto.priorityLevel ? (API_TO_PRIORITY[dto.priorityLevel] ?? 'Medium') : 'Medium',
     jobDescription: dto.jobDescription ?? undefined,
     notes: dto.notes ?? undefined,
     followUpCount: dto.followUpCount,
