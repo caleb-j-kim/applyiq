@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: applyiq-backend
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:applyiq}
+    username: ${DB_USERNAME:applyiq}
+    password: ${DB_PASSWORD:applyiq}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  demo:
+    enabled: ${DEMO_SEED_ENABLED:true}
+    email: ${DEMO_EMAIL:demo@applyiq.com}
+    password: ${DEMO_PASSWORD:demo1234}
