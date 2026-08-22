@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/app/page-header';
 import { useAuth } from '@/context/auth-context';
@@ -19,8 +20,8 @@ function initialsFor(name: string) {
 
 export function ProfilePage() {
   const { user } = useAuth();
-  const [name, setName] = useState(user?.name ?? 'Caleb Kim');
-  const [email, setEmail] = useState(user?.email ?? 'cc.kim0906@gmail.com');
+  const [name, setName] = useState(user?.name ?? 'Your Name');
+  const [email, setEmail] = useState(user?.email ?? 'you@example.com');
   const [targetRole, setTargetRole] = useState('Software Engineer');
 
   return (
@@ -38,7 +39,13 @@ export function ProfilePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              toast.success('Profile updated');
+            }}
+          >
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="name">Full name</Label>

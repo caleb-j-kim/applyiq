@@ -16,6 +16,13 @@ npm install
 npm run dev
 ```
 
+## Environment variables
+
+Copy `.env.example` to `.env` if you need to point the app at a backend
+other than `http://127.0.0.1:8080/api` (the default — see
+`src/lib/api-client.ts`). Not required for normal local dev against the
+Docker-based backend setup described in the root `README.md`.
+
 ## Scripts
 
 - `npm run dev` — start the dev server
