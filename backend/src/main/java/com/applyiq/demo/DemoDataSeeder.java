@@ -46,6 +46,6 @@ public class DemoDataSeeder implements ApplicationRunner {
         }
 
         userService.createUser("Demo", "User", demoEmail, passwordEncoder.encode(demoPassword));
-        log.info("Seeded demo account: {} / {}", demoEmail, demoPassword);
+        log.info("Seeded demo account: {} (password set via DEMO_PASSWORD)", demoEmail);
     }
 }
