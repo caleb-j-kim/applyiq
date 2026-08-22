@@ -3,6 +3,39 @@
 How to run several Claude Code sessions (or other agents) against this repo
 at the same time without them stepping on each other.
 
+## Branch strategy
+
+- **`main`** — GitHub's default branch. PRs target this. Always
+  deployable/working.
+- **`master`** — kept in sync with `main`; exists as an explicit "this is
+  the stable branch" pointer for tooling/agents that expect that name.
+  Don't develop directly on it — it moves when `main` moves.
+- **`develop`** — the integration branch. All in-progress multi-agent /
+  multi-session work branches from here, not from `main`/`master`
+  directly. Periodically merge `develop` into `main` (via PR, CI green)
+  once it's in a good state.
+- **Work branches** — cut from `develop`, named `<area>/develop-<slug>`
+  (e.g. `backend/develop-jwt-refresh`, `frontend/develop-dashboard-cards`,
+  `infra/develop-ci-cache`). The `/develop-` segment makes any
+  in-progress branch identifiable at a glance, and groups it with the
+  branch it's meant to merge back into.
+- **Exception:** branches a hosting platform assigns automatically (e.g.
+  Claude Code on the web's `claude/new-session-*` sessions) keep their
+  platform-assigned name — don't rename those, just treat them as
+  work branches conceptually.
+
+```
+main / master (stable)
+  ^
+  |  PR, CI green
+  |
+develop (integration)
+  ^
+  |  PR, CI green
+  |
+backend/develop-jwt-refresh, frontend/develop-dashboard-cards, ... (work branches)
+```
+
 ## Why worktrees
 
 A single git checkout has one working directory — two agents editing files
@@ -18,9 +51,10 @@ mutable state and no need to `git clone` the repo N times.
 From the main checkout:
 
 ```bash
-# one worktree per parallel task, each on its own branch
-git worktree add ../applyiq-frontend-x   -b agent/frontend-x
-git worktree add ../applyiq-backend-y    -b agent/backend-y
+# one worktree per parallel task, each on its own branch off develop
+git fetch origin develop
+git worktree add ../applyiq-frontend-x   -b frontend/develop-x origin/develop
+git worktree add ../applyiq-backend-y    -b backend/develop-y  origin/develop
 ```
 
 Each directory is a full, independent working copy. Point each agent/session
@@ -39,8 +73,8 @@ git worktree remove ../applyiq-frontend-x
    `docs/AGENT_OWNERSHIP.md` — each worktree/agent should own a
    non-overlapping set of files for the duration of its task.
 2. Name branches so their ownership is obvious at a glance:
-   `agent/<area>-<short-task>` (e.g. `agent/backend-jwt-refresh`,
-   `agent/frontend-dashboard-cards`).
+   `<area>/develop-<short-task>` (e.g. `backend/develop-jwt-refresh`,
+   `frontend/develop-dashboard-cards`) — see "Branch strategy" above.
 3. If two tasks genuinely need to touch the same file (e.g. both need a
    change to `frontend/src/types/index.ts`), don't run them in parallel
    worktrees — do them sequentially in one worktree, or have one agent
@@ -49,11 +83,12 @@ git worktree remove ../applyiq-frontend-x
 ## Landing the work
 
 - Each agent commits on its own branch inside its own worktree as normal.
-- Merge/rebase onto the shared base (`main`, or whatever branch the task
-  was forked from) the same way you would with any feature branch — via PR,
-  or a local merge if working solo. Do this from the *original* checkout or
-  any worktree; worktrees share the same underlying repo so all branches
-  are visible from any of them.
+- Merge/rebase onto `develop` (not `main`/`master` directly) the same way
+  you would with any feature branch — via PR, or a local merge if working
+  solo. Do this from the *original* checkout or any worktree; worktrees
+  share the same underlying repo so all branches are visible from any of
+  them. `develop` itself gets merged into `main`/`master` separately, once
+  it's in a stable, working state.
 - Resolve conflicts the normal git way. If ownership boundaries were
   respected, conflicts should be rare and limited to shared files called
   out in `docs/AGENT_OWNERSHIP.md` (e.g. `types/index.ts`,
