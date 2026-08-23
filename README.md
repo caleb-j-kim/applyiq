@@ -19,6 +19,11 @@ a dashboard aggregation endpoint, and notifications. The `ai` module (resume
 match scoring, interview prep, follow-up drafting, skill extraction) is
 designed but on hold pending a model/provider decision.
 
+Working with Claude Code (or another agent) on this repo? Start with
+`CLAUDE.md` at the repo root. For running multiple agents/sessions in
+parallel, see `docs/AGENT_OWNERSHIP.md` (module boundaries) and
+`docs/MULTI_AGENT_WORKFLOW.md` (git worktree workflow).
+
 ## Getting started (local setup, step by step)
 
 This section assumes a completely fresh machine — pick your path below.

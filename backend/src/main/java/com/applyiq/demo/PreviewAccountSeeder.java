@@ -72,7 +72,7 @@ public class PreviewAccountSeeder implements ApplicationRunner {
         jobApplicationRepository.saveAll(sampleApplications(user));
         resumeRepository.saveAll(sampleResumes(user));
 
-        log.info("Reset preview account: {} / {}", previewEmail, previewPassword);
+        log.info("Reset preview account: {} (password set via PREVIEW_PASSWORD)", previewEmail);
     }
 
     private List<JobApplication> sampleApplications(User user) {

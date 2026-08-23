@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/app/page-header';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,11 @@ export function SettingsPage() {
     matchScores: true,
     weeklyDigest: false,
   });
+
+  const handleDeleteAccount = () => {
+    if (!window.confirm("Delete your account? This can't be undone.")) return;
+    toast.info('Account deletion is not available yet.');
+  };
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -54,7 +60,9 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent>
           <Separator className="mb-4 bg-white/10" />
-          <Button variant="destructive">Delete account</Button>
+          <Button variant="destructive" onClick={handleDeleteAccount}>
+            Delete account
+          </Button>
         </CardContent>
       </Card>
     </div>

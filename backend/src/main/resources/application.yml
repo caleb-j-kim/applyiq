@@ -24,6 +24,8 @@ app:
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
   demo:
     enabled: ${DEMO_SEED_ENABLED:true}
     email: ${DEMO_EMAIL:demo@applyiq.com}
@@ -34,3 +36,6 @@ app:
     region: ${AWS_REGION:us-east-1}
     s3:
       resume-bucket: ${AWS_S3_RESUME_BUCKET:applyiq-resumes-dev}
+  preview:
+    email: ${PREVIEW_EMAIL:caleb.kim@applyiq.com}
+    password: ${PREVIEW_PASSWORD:demo1234}

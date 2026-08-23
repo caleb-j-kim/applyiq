@@ -31,6 +31,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-dev-only-secret-change-me}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
       SERVER_PORT: 8080
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:5173}
       DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
       DEMO_EMAIL: ${DEMO_EMAIL:-demo@applyiq.com}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo1234}
@@ -39,6 +40,8 @@ services:
       AWS_S3_RESUME_BUCKET: ${AWS_S3_RESUME_BUCKET:-applyiq-resumes-dev}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      PREVIEW_EMAIL: ${PREVIEW_EMAIL:-caleb.kim@applyiq.com}
+      PREVIEW_PASSWORD: ${PREVIEW_PASSWORD:-demo1234}
     ports:
       - "${SERVER_PORT:-8080}:8080"
 
