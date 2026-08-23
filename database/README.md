@@ -56,13 +56,10 @@ One row per tracked job application, scoped to a user.
 | `created_at`, `updated_at` | timestamp | |
 
 ### `resumes`
-Uploaded resume files, scoped to a user. **File bytes are stored directly in
-Postgres (`bytea`), not on disk or in S3** — a deliberate deviation from an
-earlier `file_url` design, made because the backend's production host isn't
-finalized (Vercel can't run it; free-tier hosts like Render/Railway don't
-guarantee persistent disks) and storing bytes in the DB needs zero new
-infrastructure or dependencies regardless of where the backend ends up
-deployed.
+Uploaded resume files, scoped to a user. The DB row holds metadata only —
+**file bytes live in S3** (`ResumeStorageService`), referenced by
+`storage_key`. Each environment uses its own bucket (`applyiq-resumes-dev` /
+`applyiq-resumes-prod`, see `AWS_S3_RESUME_BUCKET`).
 
 | Column | Type | Notes |
 |---|---|---|
@@ -71,7 +68,7 @@ deployed.
 | `file_name` | text | original filename |
 | `content_type` | text | must be PDF or Word (`application/pdf`, `.doc`, `.docx`) |
 | `file_size_bytes` | bigint | |
-| `content` | bytea | the actual file bytes |
+| `storage_key` | text | S3 object key (`resumes/{userId}/{uuid}`); the actual file bytes live in S3, not this table |
 | `parsed_text` | text, nullable | extracted plain text of the resume; not yet populated — will be filled in by whatever the AI module ends up using for resume ingestion (a parsing library, or skipped entirely if the LLM is sent the raw PDF directly) |
 | `is_active` | boolean | exactly one resume per user is active at a time — enforced in `ResumeService`, not a DB constraint |
 | `created_at`, `updated_at` | timestamp | |

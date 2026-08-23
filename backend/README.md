@@ -9,8 +9,8 @@ decision.
 ## Stack
 
 - Java 21, Spring Boot 4.1 (Web, Data JPA, Security, Validation)
-- PostgreSQL (including `bytea` storage for resume file bytes — see
-  `../database/README.md`)
+- PostgreSQL (see `../database/README.md`)
+- AWS S3 (resume file storage — see `storage/` below)
 - JWT auth (`io.jsonwebtoken`/jjwt)
 - Lombok
 - Maven (via included wrapper — no local Maven install needed)
@@ -22,6 +22,10 @@ decision.
   and point `JAVA_HOME` at it before running the commands below.
 - PostgreSQL running locally, or use `docker-compose up -d --build` from the
   repo root, which starts both Postgres and the backend for you.
+- An S3 bucket + IAM credentials for resume storage (`AWS_REGION`,
+  `AWS_S3_RESUME_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` in
+  `.env`) — required even for local dev, since the demo/preview account
+  seeders upload sample resumes on every startup.
 
 ## Getting started
 
@@ -76,10 +80,12 @@ src/main/java/com/applyiq/
                   JobApplicationRepository (Specification-based filtering),
                   JobApplicationService, JobApplicationController,
                   create/update/status request DTOs, JobApplicationResponse
-  resumes/        Resume entity (file bytes stored as bytea), ResumeRepository
-                  (JPQL projection keeps file bytes out of list queries),
-                  ResumeService (active-resume exclusivity, upload validation),
-                  ResumeController (multipart upload + download)
+  resumes/        Resume entity (metadata only; file bytes live in S3),
+                  ResumeRepository, ResumeService (active-resume exclusivity,
+                  upload validation), ResumeController (multipart upload +
+                  download)
+  storage/        S3Config (S3Client bean), ResumeStorageService
+                  (upload/download/delete resume bytes in S3)
   dashboard/      DashboardService (pure aggregation over JobApplication data,
                   no entity of its own), DashboardResponse, DashboardController
   notifications/  Notification entity, NotificationType enum, NotificationRepository,

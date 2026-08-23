@@ -37,6 +37,10 @@ This section assumes a completely fresh machine — pick your path below.
 - *(Only needed if you skip Docker for the backend)* **JDK 21+** — e.g.
   [Eclipse Temurin](https://adoptium.net/) — and a local **PostgreSQL**
   install.
+- **An AWS S3 bucket + IAM credentials** — resume files are stored in S3, not
+  the database. Required even for local dev: the demo/preview account
+  seeders upload sample resumes to S3 on every backend startup, so the
+  backend won't start without valid credentials and a bucket that exists.
 
 ### 1. Clone the repo
 
@@ -55,9 +59,14 @@ cp .env.example .env
 ```
 
 This one `.env` file supplies both the database credentials and the
-backend's config (JWT secret, ports) when running via Docker Compose. If
-you're running the backend directly with Maven instead (see Path B below),
-it reads its own copy at `backend/.env.example`.
+backend's config (JWT secret, ports, AWS S3) when running via Docker
+Compose. If you're running the backend directly with Maven instead (see
+Path B below), it reads its own copy at `backend/.env.example`.
+
+Fill in `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` with credentials for an
+IAM user scoped to your resume bucket (`AWS_S3_RESUME_BUCKET`, default
+`applyiq-resumes-dev`) — the backend uploads sample resumes to S3 on every
+startup and will fail to start without them.
 
 ### 3A. Path A — Docker for backend + database (recommended)
 
@@ -161,6 +170,7 @@ Stop the frontend dev server with `Ctrl+C` in its terminal.
 | Backend container starts then immediately exits, or can't reach the DB | Check `docker-compose logs backend` — usually means Postgres wasn't healthy yet when the backend tried to connect, or `.env` values don't match. Re-run `docker-compose up -d --build`. |
 | Backend code changes don't show up | You forgot `--build` — plain `docker-compose up -d` reuses the existing image. |
 | Port `8080`, `5432`, or `5173` already in use | Something else on your machine is using it. Override via `.env` (`SERVER_PORT`, `DB_PORT`) for the backend/DB, or pass `--port` to `npm run dev` for the frontend. |
+| Backend crashes on startup with an S3/credentials error | `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` are missing or wrong, or `AWS_S3_RESUME_BUCKET` doesn't exist — the demo/preview seeders upload sample resumes to S3 on every startup. Set `DEMO_SEED_ENABLED=false` in `.env` as a temporary workaround if you don't need the demo accounts. |
 | `./mvnw` fails with a Java version error (Path B only) | You need JDK 21+ specifically — check `java -version` and update `JAVA_HOME` if an older JDK is active. |
 
 See `frontend/README.md`, `backend/README.md`, and `database/README.md` for
