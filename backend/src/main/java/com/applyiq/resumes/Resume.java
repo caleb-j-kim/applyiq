@@ -47,8 +47,8 @@ public class Resume {
     @Column(name = "file_size_bytes", nullable = false)
     private long fileSizeBytes;
 
-    @Column(nullable = false)
-    private byte[] content;
+    @Column(name = "storage_key", nullable = false)
+    private String storageKey;
 
     @Column(name = "parsed_text", columnDefinition = "TEXT")
     private String parsedText;

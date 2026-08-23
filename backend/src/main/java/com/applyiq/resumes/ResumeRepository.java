@@ -14,6 +14,8 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
 
     long countByUser_Id(UUID userId);
 
+    List<Resume> findAllByUser_Id(UUID userId);
+
     List<Resume> findAllByUser_IdAndActiveTrue(UUID userId);
 
     Optional<Resume> findFirstByUser_IdOrderByCreatedAtDesc(UUID userId);

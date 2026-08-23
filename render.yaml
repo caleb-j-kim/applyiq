@@ -1,0 +1,57 @@
+databases:
+  - name: applyiq-db-prod
+    plan: basic-256mb
+    region: oregon
+    databaseName: applyiq
+    user: applyiq
+    postgresMajorVersion: "17"
+
+services:
+  - type: web
+    name: applyiq-backend-prod
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeployTrigger: commit
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: applyiq-db-prod
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: applyiq-db-prod
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: applyiq-db-prod
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: applyiq-db-prod
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: applyiq-db-prod
+          property: password
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+      - key: SERVER_PORT
+        value: "8080"
+      - key: DEMO_SEED_ENABLED
+        value: "false"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_S3_RESUME_BUCKET
+        value: applyiq-resumes-prod
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false

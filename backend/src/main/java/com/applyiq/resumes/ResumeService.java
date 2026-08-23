@@ -2,6 +2,7 @@ package com.applyiq.resumes;
 
 import com.applyiq.common.exception.InvalidFileException;
 import com.applyiq.common.exception.ResourceNotFoundException;
+import com.applyiq.storage.ResumeStorageService;
 import com.applyiq.users.User;
 import com.applyiq.users.UserService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final UserService userService;
+    private final ResumeStorageService resumeStorageService;
 
     public Resume upload(UUID userId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -49,15 +51,23 @@ public class ResumeService {
             throw new UncheckedIOException("Failed to read uploaded resume file", e);
         }
 
+        String storageKey = resumeStorageService.newKey(userId);
+        resumeStorageService.upload(storageKey, content, file.getContentType());
+
         Resume resume = Resume.builder()
                 .user(user)
                 .fileName(file.getOriginalFilename())
                 .contentType(file.getContentType())
                 .fileSizeBytes(file.getSize())
-                .content(content)
+                .storageKey(storageKey)
                 .active(isFirstResume)
                 .build();
         return resumeRepository.save(resume);
+    }
+
+    public byte[] download(UUID userId, UUID resumeId) {
+        Resume resume = getOwned(userId, resumeId);
+        return resumeStorageService.download(resume.getStorageKey());
     }
 
     public List<ResumeResponse> list(UUID userId) {
@@ -84,6 +94,7 @@ public class ResumeService {
         Resume resume = getOwned(userId, resumeId);
         boolean wasActive = resume.isActive();
         resumeRepository.delete(resume);
+        resumeStorageService.delete(resume.getStorageKey());
 
         if (wasActive) {
             resumeRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)

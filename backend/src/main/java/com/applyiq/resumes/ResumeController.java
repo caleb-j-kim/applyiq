@@ -48,12 +48,14 @@ public class ResumeController {
 
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> download(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
-        Resume resume = resumeService.getOwned(principal.getUser().getId(), id);
+        UUID userId = principal.getUser().getId();
+        Resume resume = resumeService.getOwned(userId, id);
+        byte[] content = resumeService.download(userId, id);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(resume.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(resume.getFileName()).build().toString())
-                .body(resume.getContent());
+                .body(content);
     }
 
     @PatchMapping("/{id}/active")

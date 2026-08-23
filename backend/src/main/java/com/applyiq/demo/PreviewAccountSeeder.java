@@ -6,6 +6,7 @@ import com.applyiq.applications.JobApplicationRepository;
 import com.applyiq.applications.PriorityLevel;
 import com.applyiq.resumes.Resume;
 import com.applyiq.resumes.ResumeRepository;
+import com.applyiq.storage.ResumeStorageService;
 import com.applyiq.users.User;
 import com.applyiq.users.UserRepository;
 import com.applyiq.users.UserService;
@@ -41,6 +42,7 @@ public class PreviewAccountSeeder implements ApplicationRunner {
     private final UserService userService;
     private final JobApplicationRepository jobApplicationRepository;
     private final ResumeRepository resumeRepository;
+    private final ResumeStorageService resumeStorageService;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.demo.enabled:true}")
@@ -63,6 +65,8 @@ public class PreviewAccountSeeder implements ApplicationRunner {
                 .orElseGet(() -> userService.createUser("Caleb", "Kim", previewEmail, passwordEncoder.encode(previewPassword)));
 
         jobApplicationRepository.deleteAllByUser_Id(user.getId());
+        resumeRepository.findAllByUser_Id(user.getId())
+                .forEach(resume -> resumeStorageService.delete(resume.getStorageKey()));
         resumeRepository.deleteAllByUser_Id(user.getId());
 
         jobApplicationRepository.saveAll(sampleApplications(user));
@@ -157,16 +161,18 @@ public class PreviewAccountSeeder implements ApplicationRunner {
 
     private List<Resume> sampleResumes(User user) {
         return Arrays.asList(
-                Resume.builder().user(user).fileName("Caleb_Kim_Resume_2026.pdf")
-                        .contentType("application/pdf").active(true)
-                        .content(placeholderPdf(142)).fileSizeBytes(placeholderPdf(142).length).build(),
-                Resume.builder().user(user).fileName("Caleb_Kim_Resume_SWE_Intern.pdf")
-                        .contentType("application/pdf").active(false)
-                        .content(placeholderPdf(138)).fileSizeBytes(placeholderPdf(138).length).build(),
-                Resume.builder().user(user).fileName("Caleb_Kim_Resume_DataFocus.pdf")
-                        .contentType("application/pdf").active(false)
-                        .content(placeholderPdf(151)).fileSizeBytes(placeholderPdf(151).length).build()
+                seededResume(user, "Caleb_Kim_Resume_2026.pdf", true, placeholderPdf(142)),
+                seededResume(user, "Caleb_Kim_Resume_SWE_Intern.pdf", false, placeholderPdf(138)),
+                seededResume(user, "Caleb_Kim_Resume_DataFocus.pdf", false, placeholderPdf(151))
         );
+    }
+
+    private Resume seededResume(User user, String fileName, boolean active, byte[] content) {
+        String storageKey = resumeStorageService.newKey(user.getId());
+        resumeStorageService.upload(storageKey, content, "application/pdf");
+        return Resume.builder().user(user).fileName(fileName)
+                .contentType("application/pdf").active(active)
+                .storageKey(storageKey).fileSizeBytes(content.length).build();
     }
 
     private byte[] placeholderPdf(int targetSizeKb) {
