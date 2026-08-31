@@ -9,6 +9,15 @@ export type ApplicationStatus =
   | 'Ghosted'
   | 'Withdrawn';
 
+export type InterviewStage =
+  | 'Phone Screening'
+  | 'First Round'
+  | 'Second Round'
+  | 'Third Round'
+  | 'Fourth Round'
+  | 'Fifth Round'
+  | 'Final Round';
+
 export type PriorityLevel = 'Low' | 'Medium' | 'High';
 
 export interface JobApplication {
@@ -34,6 +43,9 @@ export interface JobApplication {
   notes?: string;
   followUpCount: number;
   matchScore?: number;
+  interviewRoundsTotal?: number;
+  interviewRoundsCompleted?: number;
+  interviewStage?: InterviewStage;
 }
 
 export interface Resume {

@@ -26,12 +26,11 @@ public class DashboardService {
             ApplicationStatus.SAVED, ApplicationStatus.APPLIED, ApplicationStatus.ONLINE_ASSESSMENT,
             ApplicationStatus.INTERVIEWING, ApplicationStatus.FINAL_ROUND);
 
+    // Broader "got some response" set for referralResponseRate — current-status based, distinct
+    // from the interview rate below (which is history-based on completed interview rounds).
     private static final Set<ApplicationStatus> INTERVIEWED_STATUSES = EnumSet.of(
             ApplicationStatus.INTERVIEWING, ApplicationStatus.FINAL_ROUND,
             ApplicationStatus.OFFER, ApplicationStatus.REJECTED);
-
-    private static final Set<ApplicationStatus> INTERVIEW_STAGE_STATUSES = EnumSet.of(
-            ApplicationStatus.INTERVIEWING, ApplicationStatus.FINAL_ROUND);
 
     private static final int FOLLOW_UP_THRESHOLD_DAYS = 7;
     private static final int WEEKLY_ACTIVITY_WEEKS = 6;
@@ -53,8 +52,25 @@ public class DashboardService {
                 .filter(a -> !a.isHasReferral() && INTERVIEWED_STATUSES.contains(a.getStatus()))
                 .count();
 
+        // History-based, not status-based: a completed interview round still counts toward the
+        // rate even after the application moves on to Offer/Rejected/etc. It only stops counting
+        // if the application is reset back to APPLIED, which clears these fields (see
+        // JobApplicationService.discardInterviewProgressIfApplied) — so this naturally recomputes
+        // correctly on every dashboard read after any status update.
+        long completedInterviewWithReferral = applications.stream()
+                .filter(a -> a.isHasReferral() && hasCompletedInterview(a))
+                .count();
+        long completedInterviewWithoutReferral = applications.stream()
+                .filter(a -> !a.isHasReferral() && hasCompletedInterview(a))
+                .count();
+
         long active = applications.stream().filter(a -> ACTIVE_STATUSES.contains(a.getStatus())).count();
-        long interviews = applications.stream().filter(a -> INTERVIEW_STAGE_STATUSES.contains(a.getStatus())).count();
+        // Total interviews had, not a current-status snapshot: sums every completed round
+        // across every application, so one application with 2 of 3 rounds done contributes 2,
+        // not 1 — consistent with the interview rate now being history-based too.
+        long interviews = applications.stream()
+                .mapToLong(a -> a.getInterviewRoundsCompleted() != null ? a.getInterviewRoundsCompleted() : 0)
+                .sum();
         long offers = countByStatus(applications, ApplicationStatus.OFFER);
         long rejected = countByStatus(applications, ApplicationStatus.REJECTED);
         long ghosted = countByStatus(applications, ApplicationStatus.GHOSTED);
@@ -65,7 +81,8 @@ public class DashboardService {
                 .count();
 
         int referralResponseRate = ratePercent(interviewedWithReferral, withReferral);
-        int interviewRateWithoutReferral = ratePercent(interviewedWithoutReferral, withoutReferral);
+        int interviewRateWithReferral = ratePercent(completedInterviewWithReferral, withReferral);
+        int interviewRateWithoutReferral = ratePercent(completedInterviewWithoutReferral, withoutReferral);
 
         return new DashboardResponse(
                 total,
@@ -73,7 +90,7 @@ public class DashboardService {
                 withReferral,
                 withoutReferral,
                 referralResponseRate,
-                referralResponseRate,
+                interviewRateWithReferral,
                 interviewRateWithoutReferral,
                 interviews,
                 offers,
@@ -102,6 +119,11 @@ public class DashboardService {
 
     private int ratePercent(long numerator, long denominator) {
         return denominator == 0 ? 0 : Math.round((numerator * 100f) / denominator);
+    }
+
+    private boolean hasCompletedInterview(JobApplication application) {
+        Integer completed = application.getInterviewRoundsCompleted();
+        return completed != null && completed > 0;
     }
 
     private List<DashboardResponse.StatusCount> statusBreakdown(List<JobApplication> applications) {

@@ -42,7 +42,11 @@ public class JobApplicationService {
                 .jobDescription(request.jobDescription())
                 .notes(request.notes())
                 .followUpCount(0)
+                .interviewRoundsTotal(request.interviewRoundsTotal())
+                .interviewRoundsCompleted(request.interviewRoundsCompleted())
+                .interviewStage(request.interviewStage())
                 .build();
+        discardInterviewProgressIfApplied(application);
         return jobApplicationRepository.save(application);
     }
 
@@ -90,14 +94,30 @@ public class JobApplicationService {
         if (request.priorityLevel() != null) application.setPriorityLevel(request.priorityLevel());
         if (request.jobDescription() != null) application.setJobDescription(request.jobDescription());
         if (request.notes() != null) application.setNotes(request.notes());
+        if (request.interviewRoundsTotal() != null) application.setInterviewRoundsTotal(request.interviewRoundsTotal());
+        if (request.interviewRoundsCompleted() != null) application.setInterviewRoundsCompleted(request.interviewRoundsCompleted());
+        if (request.interviewStage() != null) application.setInterviewStage(request.interviewStage());
 
+        discardInterviewProgressIfApplied(application);
         return jobApplicationRepository.save(application);
     }
 
     public JobApplication updateStatus(UUID userId, UUID applicationId, ApplicationStatus status) {
         JobApplication application = getOwned(userId, applicationId);
         application.setStatus(status);
+        discardInterviewProgressIfApplied(application);
         return jobApplicationRepository.save(application);
+    }
+
+    // An application moving back to APPLIED is a deliberate reset (e.g. someone testing the
+    // app, or correcting a mistaken entry) — its interview history no longer counts, so the
+    // recorded rounds/stage are discarded rather than left to keep inflating the interview rate.
+    private void discardInterviewProgressIfApplied(JobApplication application) {
+        if (application.getStatus() == ApplicationStatus.APPLIED) {
+            application.setInterviewRoundsTotal(null);
+            application.setInterviewRoundsCompleted(null);
+            application.setInterviewStage(null);
+        }
     }
 
     public void delete(UUID userId, UUID applicationId) {

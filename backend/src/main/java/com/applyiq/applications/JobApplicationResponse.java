@@ -26,6 +26,9 @@ public record JobApplicationResponse(
         String jobDescription,
         String notes,
         int followUpCount,
+        Integer interviewRoundsTotal,
+        Integer interviewRoundsCompleted,
+        InterviewStage interviewStage,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -52,6 +55,9 @@ public record JobApplicationResponse(
                 a.getJobDescription(),
                 a.getNotes(),
                 a.getFollowUpCount(),
+                a.getInterviewRoundsTotal(),
+                a.getInterviewRoundsCompleted(),
+                a.getInterviewStage(),
                 a.getCreatedAt(),
                 a.getUpdatedAt()
         );

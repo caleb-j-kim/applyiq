@@ -23,6 +23,9 @@ public record JobApplicationUpdateRequest(
         @Email String recruiterEmail,
         PriorityLevel priorityLevel,
         String jobDescription,
-        String notes
+        String notes,
+        Integer interviewRoundsTotal,
+        Integer interviewRoundsCompleted,
+        InterviewStage interviewStage
 ) {
 }

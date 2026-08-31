@@ -1,4 +1,4 @@
-import type { ApplicationStatus, JobApplication, PriorityLevel, Resume } from '@/types';
+import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel, Resume } from '@/types';
 
 export const STATUS_TO_API: Record<ApplicationStatus, string> = {
   Saved: 'SAVED',
@@ -14,6 +14,20 @@ export const STATUS_TO_API: Record<ApplicationStatus, string> = {
 
 export const API_TO_STATUS: Record<string, ApplicationStatus> = Object.fromEntries(
   Object.entries(STATUS_TO_API).map(([literal, api]) => [api, literal as ApplicationStatus])
+);
+
+export const INTERVIEW_STAGE_TO_API: Record<InterviewStage, string> = {
+  'Phone Screening': 'PHONE_SCREENING',
+  'First Round': 'FIRST_ROUND',
+  'Second Round': 'SECOND_ROUND',
+  'Third Round': 'THIRD_ROUND',
+  'Fourth Round': 'FOURTH_ROUND',
+  'Fifth Round': 'FIFTH_ROUND',
+  'Final Round': 'FINAL_ROUND',
+};
+
+export const API_TO_INTERVIEW_STAGE: Record<string, InterviewStage> = Object.fromEntries(
+  Object.entries(INTERVIEW_STAGE_TO_API).map(([literal, api]) => [api, literal as InterviewStage])
 );
 
 export const PRIORITY_TO_API: Record<PriorityLevel, string> = {
@@ -48,6 +62,9 @@ export interface JobApplicationResponseDto {
   jobDescription: string | null;
   notes: string | null;
   followUpCount: number;
+  interviewRoundsTotal: number | null;
+  interviewRoundsCompleted: number | null;
+  interviewStage: string | null;
 }
 
 export function mapApplicationResponse(dto: JobApplicationResponseDto): JobApplication {
@@ -74,6 +91,9 @@ export function mapApplicationResponse(dto: JobApplicationResponseDto): JobAppli
     notes: dto.notes ?? undefined,
     followUpCount: dto.followUpCount,
     matchScore: undefined,
+    interviewRoundsTotal: dto.interviewRoundsTotal ?? undefined,
+    interviewRoundsCompleted: dto.interviewRoundsCompleted ?? undefined,
+    interviewStage: dto.interviewStage ? API_TO_INTERVIEW_STAGE[dto.interviewStage] : undefined,
   };
 }
 
@@ -91,9 +111,13 @@ export interface ApplicationFormValues {
   referralContactInfo: string;
   jobDescription: string;
   notes: string;
+  interviewRoundsTotal: string;
+  interviewRoundsCompleted: string;
+  interviewStage: InterviewStage | '';
 }
 
 export function mapApplicationToRequest(form: ApplicationFormValues) {
+  const isInterviewing = form.status === 'Interviewing';
   return {
     companyName: form.companyName,
     jobTitle: form.jobTitle,
@@ -108,6 +132,10 @@ export function mapApplicationToRequest(form: ApplicationFormValues) {
     priorityLevel: PRIORITY_TO_API[form.priorityLevel],
     jobDescription: form.jobDescription || null,
     notes: form.notes || null,
+    interviewRoundsTotal: isInterviewing && form.interviewRoundsTotal !== '' ? Number(form.interviewRoundsTotal) : null,
+    interviewRoundsCompleted:
+      isInterviewing && form.interviewRoundsCompleted !== '' ? Number(form.interviewRoundsCompleted) : null,
+    interviewStage: isInterviewing && form.interviewStage ? INTERVIEW_STAGE_TO_API[form.interviewStage] : null,
   };
 }
 

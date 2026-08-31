@@ -25,6 +25,9 @@ public record JobApplicationCreateRequest(
         @Email String recruiterEmail,
         PriorityLevel priorityLevel,
         String jobDescription,
-        String notes
+        String notes,
+        Integer interviewRoundsTotal,
+        Integer interviewRoundsCompleted,
+        InterviewStage interviewStage
 ) {
 }

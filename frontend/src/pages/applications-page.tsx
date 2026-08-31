@@ -43,7 +43,7 @@ import {
   type ApplicationFormValues,
   type JobApplicationResponseDto,
 } from '@/lib/mappers';
-import type { ApplicationStatus, JobApplication, PriorityLevel } from '@/types';
+import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel } from '@/types';
 
 const ALL_STATUSES: ApplicationStatus[] = [
   'Saved',
@@ -69,6 +69,16 @@ const KANBAN_COLUMNS: ApplicationStatus[] = [
   'Withdrawn',
 ];
 
+const INTERVIEW_STAGES: InterviewStage[] = [
+  'Phone Screening',
+  'First Round',
+  'Second Round',
+  'Third Round',
+  'Fourth Round',
+  'Fifth Round',
+  'Final Round',
+];
+
 const PRIORITIES: PriorityLevel[] = ['Low', 'Medium', 'High'];
 
 const emptyForm: ApplicationFormValues = {
@@ -85,6 +95,9 @@ const emptyForm: ApplicationFormValues = {
   referralContactInfo: '',
   jobDescription: '',
   notes: '',
+  interviewRoundsTotal: '',
+  interviewRoundsCompleted: '',
+  interviewStage: '',
 };
 
 function toFormValues(app: JobApplication): ApplicationFormValues {
@@ -102,6 +115,9 @@ function toFormValues(app: JobApplication): ApplicationFormValues {
     referralContactInfo: app.referralContactInfo ?? '',
     jobDescription: app.jobDescription ?? '',
     notes: app.notes ?? '',
+    interviewRoundsTotal: app.interviewRoundsTotal?.toString() ?? '',
+    interviewRoundsCompleted: app.interviewRoundsCompleted?.toString() ?? '',
+    interviewStage: app.interviewStage ?? '',
   };
 }
 
@@ -354,6 +370,49 @@ export function ApplicationsPage() {
                   </div>
                 )}
 
+                {form.status === 'Interviewing' && (
+                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/10 p-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
+                      <Input
+                        id="interviewRoundsTotal"
+                        type="number"
+                        min={0}
+                        value={form.interviewRoundsTotal}
+                        onChange={(e) => setForm((f) => ({ ...f, interviewRoundsTotal: e.target.value }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
+                      <Input
+                        id="interviewRoundsCompleted"
+                        type="number"
+                        min={0}
+                        value={form.interviewRoundsCompleted}
+                        onChange={(e) => setForm((f) => ({ ...f, interviewRoundsCompleted: e.target.value }))}
+                      />
+                    </div>
+                    <div className="col-span-2 flex flex-col gap-1.5">
+                      <Label>Current interview stage</Label>
+                      <Select
+                        value={form.interviewStage}
+                        onValueChange={(v) => setForm((f) => ({ ...f, interviewStage: v as InterviewStage }))}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a stage" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INTERVIEW_STAGES.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="jobDescription">Job description</Label>
                   <Textarea
@@ -454,22 +513,30 @@ export function ApplicationsPage() {
                         </TableCell>
                         <TableCell className="text-white/70">{app.jobTitle}</TableCell>
                         <TableCell className="text-white/50">{app.location}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={app.status}
-                            onValueChange={(v) => handleStatusChange(app.id, v as ApplicationStatus)}
-                          >
-                            <SelectTrigger className="h-auto w-auto border-none bg-transparent p-0 shadow-none">
-                              <StatusBadge status={app.status} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ALL_STATUSES.map((s) => (
-                                <SelectItem key={s} value={s}>
-                                  {s}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <TableCell className="whitespace-normal">
+                          <div className="flex flex-col gap-1">
+                            <Select
+                              value={app.status}
+                              onValueChange={(v) => handleStatusChange(app.id, v as ApplicationStatus)}
+                            >
+                              <SelectTrigger className="h-auto w-auto border-none bg-transparent p-0 shadow-none">
+                                <StatusBadge status={app.status} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ALL_STATUSES.map((s) => (
+                                  <SelectItem key={s} value={s}>
+                                    {s}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {app.status === 'Interviewing' && app.interviewStage && (
+                              <span className="text-xs whitespace-nowrap text-white/40">
+                                {app.interviewRoundsCompleted ?? 0}/{app.interviewRoundsTotal ?? '?'} rounds ·{' '}
+                                {app.interviewStage}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-white/50">
                           {app.hasReferral ? `Yes — ${app.referralName ?? ''}` : 'No'}
@@ -557,6 +624,12 @@ export function ApplicationsPage() {
                             <span>{app.dateApplied}</span>
                             {app.hasReferral && <span className="text-sky-400">Referred</span>}
                           </div>
+                          {app.status === 'Interviewing' && app.interviewStage && (
+                            <div className="mt-1 text-xs text-white/40">
+                              {app.interviewRoundsCompleted ?? 0}/{app.interviewRoundsTotal ?? '?'} rounds ·{' '}
+                              {app.interviewStage}
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}

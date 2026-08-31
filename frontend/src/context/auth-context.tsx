@@ -44,10 +44,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Restore a session on page load/refresh: re-validate the stored token against the
-  // backend (rather than trusting stale localStorage data) before rendering anything
-  // that depends on being logged in.
+  // AuthProvider wraps the app above <Routes>, so this effect only ever runs on a real
+  // browser page load/refresh — never on in-app client-side navigation. Any such load sends
+  // the user back to the home screen first: this both matches the requested "refresh always
+  // lands on home" behavior and guarantees a clean landing spot if the stored token turns out
+  // to be stale (e.g. expired after the machine was asleep or off for a while), rather than
+  // leaving the app stuck on a deep route it's mid-way through logging out of.
   useEffect(() => {
+    if (window.location.pathname !== '/') {
+      window.location.href = '/';
+      return;
+    }
+
     const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (!storedToken) {
       setIsInitializing(false);

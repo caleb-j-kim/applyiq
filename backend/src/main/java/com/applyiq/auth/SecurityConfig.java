@@ -29,6 +29,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
@@ -72,7 +73,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

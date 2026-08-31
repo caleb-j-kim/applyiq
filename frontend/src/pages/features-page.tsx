@@ -37,6 +37,24 @@ const CORE_FEATURES: FeatureDetail[] = [
       'Set a priority level (Low, Medium, High) on every application so you know where to focus.',
       'Edit, change status, or delete any application at any time — every change saves to your account.',
       'Attach a full job description and free-form notes for later reference, e.g. before an interview.',
+      'When an application\'s status is set to "Interviewing," log how many total interview rounds the role has, how many you\'ve completed so far, and which specific stage you\'re currently on (Phone Screening through Final Round) — that progress is what the dashboard\'s interview rate and interview count are calculated from.',
+      'That interview progress is preserved even after the application moves on to an offer, rejection, or elsewhere — it\'s only cleared if you move the application back to "Applied," since that means it no longer represents a real interview in progress.',
+    ],
+  },
+  {
+    icon: LayoutDashboard,
+    title: 'Dashboard & Analytics',
+    summary:
+      'A single dashboard that turns your raw application history into a clear picture of how your search is actually going.',
+    points: [
+      'Total and active application counts, plus a breakdown of applications with vs. without a referral.',
+      'Interview rate: the percentage of your applications that have gotten you an interview, compared to how many applications you\'ve created — calculated separately for referred vs. non-referred applications so you can see exactly how much referrals help.',
+      'Interviews: the total number of interviews you\'ve received across every application, not just the ones currently in the interview stage — every completed round counts, even after that application moves on to an offer, a rejection, or elsewhere.',
+      'Counts for offers, rejections, and applications that have gone quiet (ghosted).',
+      'A follow-ups-needed heuristic that flags applications likely due for a nudge.',
+      'Visual status breakdown across your whole pipeline.',
+      'Weekly application activity trend, so you can see if your search is speeding up or slowing down.',
+      'A dedicated analytics view adds response-rate-by-source breakdowns, so you know whether LinkedIn, referrals, or job boards are actually converting for you.',
     ],
   },
   {
@@ -50,21 +68,6 @@ const CORE_FEATURES: FeatureDetail[] = [
       'Mark exactly one resume "active" at a time — that version is used across the rest of ApplyIQ.',
       'Download any uploaded resume back at any time, from any device.',
       'Delete an old version safely — if it was active, ApplyIQ automatically promotes your next most recent resume so you\'re never left without one.',
-    ],
-  },
-  {
-    icon: LayoutDashboard,
-    title: 'Dashboard & Analytics',
-    summary:
-      'A single dashboard that turns your raw application history into a clear picture of how your search is actually going.',
-    points: [
-      'Total and active application counts, plus a breakdown of applications with vs. without a referral.',
-      'Referral response rate and interview rate, calculated separately for referred vs. non-referred applications.',
-      'Counts for interviews, offers, rejections, and applications that have gone quiet (ghosted).',
-      'A follow-ups-needed heuristic that flags applications likely due for a nudge.',
-      'Visual status breakdown across your whole pipeline.',
-      'Weekly application activity trend, so you can see if your search is speeding up or slowing down.',
-      'A dedicated analytics view adds response-rate-by-source breakdowns, so you know whether LinkedIn, referrals, or job boards are actually converting for you.',
     ],
   },
   {

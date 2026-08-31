@@ -52,8 +52,12 @@ public class JobApplication {
     @Column(name = "job_url")
     private String jobUrl;
 
+    // columnDefinition pins this to a plain varchar so Hibernate never generates a CHECK
+    // constraint enumerating the enum's values — ddl-auto=update can't rewrite an existing
+    // constraint when new ApplicationStatus values are added, so a generated one goes stale
+    // and starts rejecting valid statuses the moment the enum grows.
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(32)")
     private ApplicationStatus status;
 
     private String source;
@@ -100,6 +104,20 @@ public class JobApplication {
 
     @Column(name = "follow_up_count", nullable = false)
     private int followUpCount;
+
+    // Only meaningful while status is INTERVIEWING, but deliberately not cleared on other
+    // status transitions (Offer/Rejected/etc.) — the interview rate is history-based, so this
+    // needs to survive the application moving on. It's only ever cleared if the status goes
+    // back to APPLIED (see JobApplicationService), which discards the interview history.
+    @Column(name = "interview_rounds_total")
+    private Integer interviewRoundsTotal;
+
+    @Column(name = "interview_rounds_completed")
+    private Integer interviewRoundsCompleted;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interview_stage", columnDefinition = "varchar(32)")
+    private InterviewStage interviewStage;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
