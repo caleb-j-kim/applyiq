@@ -34,7 +34,10 @@ export function AccountMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-400">
+      <DropdownMenuTrigger
+        aria-label="Account menu"
+        className="flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+      >
         <Avatar>
           <AvatarFallback className="bg-sky-500/15 text-sky-400">
             {initialsFor(displayName)}

@@ -7,9 +7,9 @@ import type {
 } from '@/types';
 
 export const mockResumes: Resume[] = [
-  { id: 'r1', fileName: 'Caleb_Kim_Resume_2026.pdf', uploadedAt: '2026-07-18', isActive: true, sizeKb: 142 },
-  { id: 'r2', fileName: 'Caleb_Kim_Resume_SWE_Intern.pdf', uploadedAt: '2026-06-02', isActive: false, sizeKb: 138 },
-  { id: 'r3', fileName: 'Caleb_Kim_Resume_DataFocus.pdf', uploadedAt: '2026-04-11', isActive: false, sizeKb: 151 },
+  { id: 'r1', fileName: 'Caleb_Kim_Resume_2026.pdf', uploadedAt: '2026-07-18', isActive: true, sizeKb: 142, hasParsedText: true },
+  { id: 'r2', fileName: 'Caleb_Kim_Resume_SWE_Intern.pdf', uploadedAt: '2026-06-02', isActive: false, sizeKb: 138, hasParsedText: true },
+  { id: 'r3', fileName: 'Caleb_Kim_Resume_DataFocus.pdf', uploadedAt: '2026-04-11', isActive: false, sizeKb: 151, hasParsedText: true },
 ];
 
 export const mockApplications: JobApplication[] = [

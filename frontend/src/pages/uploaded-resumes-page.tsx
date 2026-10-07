@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Download, FileText, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, Download, FileText, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/app/page-header';
@@ -21,6 +21,7 @@ export function UploadedResumesPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [extractingId, setExtractingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchResumes = async () => {
@@ -61,6 +62,23 @@ export function UploadedResumesPage() {
       toast.error(error instanceof Error ? error.message : 'Upload failed');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const extractText = async (resume: Resume) => {
+    setExtractingId(resume.id);
+    try {
+      const updated = await apiFetch<ResumeResponseDto>(`/resumes/${resume.id}/extract-text`, { method: 'POST' });
+      await fetchResumes();
+      if (updated.parsedText && updated.parsedText.trim()) {
+        toast.success('Resume processed — it can be used for match scoring now.');
+      } else {
+        toast.error('Could not extract text from this file — it may be a scanned/image-only PDF. Try re-exporting it with a real text layer.');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to process resume');
+    } finally {
+      setExtractingId(null);
     }
   };
 
@@ -120,13 +138,13 @@ export function UploadedResumesPage() {
 
       <div className="flex flex-col gap-3">
         {isLoading && (
-          <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
-            <CardContent className="py-12 text-center text-sm text-white/40">Loading resumes...</CardContent>
+          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+            <CardContent className="py-12 text-center text-sm text-slate-400 dark:text-white/40">Loading resumes...</CardContent>
           </Card>
         )}
         {!isLoading &&
           resumes.map((resume) => (
-            <Card key={resume.id} className="border-white/10 bg-white/[0.03] backdrop-blur">
+            <Card key={resume.id} className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
               <CardContent className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400">
@@ -134,20 +152,38 @@ export function UploadedResumesPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white">{resume.fileName}</span>
+                      <span className="text-sm font-medium text-slate-900 dark:text-white">{resume.fileName}</span>
                       {resume.isActive && <Badge className="bg-sky-500/10 text-sky-300">Active</Badge>}
+                      {!resume.hasParsedText && (
+                        <Badge className="gap-1 bg-amber-500/10 text-amber-400">
+                          <AlertTriangle className="h-3 w-3" />
+                          Not ready for matching
+                        </Badge>
+                      )}
                     </div>
-                    <div className="text-xs text-white/40">
+                    <div className="text-xs text-slate-400 dark:text-white/40">
                       Uploaded {resume.uploadedAt} · {resume.sizeKb} KB
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {!resume.hasParsedText && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={extractingId === resume.id}
+                      className="gap-1.5 border-amber-500/30 bg-transparent text-amber-400 hover:bg-amber-500/10"
+                      onClick={() => extractText(resume)}
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${extractingId === resume.id ? 'animate-spin' : ''}`} />
+                      {extractingId === resume.id ? 'Processing...' : 'Prepare for matching'}
+                    </Button>
+                  )}
                   {!resume.isActive && (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-white/15 bg-transparent text-white/70 hover:bg-white/10"
+                      className="border-slate-300 dark:border-white/15 bg-transparent text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10"
                       onClick={() => setActive(resume.id)}
                     >
                       Set active
@@ -156,7 +192,7 @@ export function UploadedResumesPage() {
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    className="text-white/50 hover:bg-white/10 hover:text-white"
+                    className="text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                     onClick={() => download(resume)}
                     aria-label={`Download ${resume.fileName}`}
                   >
@@ -165,7 +201,7 @@ export function UploadedResumesPage() {
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    className="text-white/50 hover:bg-rose-500/10 hover:text-rose-400"
+                    className="text-slate-500 dark:text-white/50 hover:bg-rose-500/10 hover:text-rose-400"
                     onClick={() => remove(resume)}
                     aria-label={`Delete ${resume.fileName}`}
                   >
@@ -176,8 +212,8 @@ export function UploadedResumesPage() {
             </Card>
           ))}
         {!isLoading && resumes.length === 0 && (
-          <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
-            <CardContent className="py-12 text-center text-sm text-white/40">
+          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+            <CardContent className="py-12 text-center text-sm text-slate-400 dark:text-white/40">
               No resumes uploaded yet.
             </CardContent>
           </Card>

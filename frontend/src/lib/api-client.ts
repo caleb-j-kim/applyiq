@@ -1,3 +1,5 @@
+import { addNotification } from '@/lib/notification-store';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080/api';
 
 interface ApiEnvelope<T> {
@@ -22,6 +24,14 @@ async function parseErrorMessage(response: Response): Promise<string> {
   return `Request failed with status ${response.status}`;
 }
 
+// Every API failure funnels through here — this is the single choke point that
+// feeds the notification bell, so any call going through apiFetch/uploadResume/
+// downloadResume shows up there automatically, with no per-call-site wiring.
+function failAndNotify(message: string): never {
+  addNotification(message);
+  throw new Error(message);
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
@@ -34,17 +44,17 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
 
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    failAndNotify(await parseErrorMessage(response));
   }
 
   const envelope = (await response.json()) as ApiEnvelope<T>;
   if (!envelope.success) {
-    throw new Error(envelope.message ?? 'Request failed');
+    failAndNotify(envelope.message ?? 'Request failed');
   }
   return envelope.data;
 }
 
-export async function uploadResume(file: File): Promise<unknown> {
+export async function uploadResume<T = unknown>(file: File): Promise<T> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -60,12 +70,12 @@ export async function uploadResume(file: File): Promise<unknown> {
   });
 
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    failAndNotify(await parseErrorMessage(response));
   }
 
-  const envelope = (await response.json()) as ApiEnvelope<unknown>;
+  const envelope = (await response.json()) as ApiEnvelope<T>;
   if (!envelope.success) {
-    throw new Error(envelope.message ?? 'Upload failed');
+    failAndNotify(envelope.message ?? 'Upload failed');
   }
   return envelope.data;
 }
@@ -78,7 +88,7 @@ export async function downloadResume(id: string, fallbackFileName: string): Prom
 
   const response = await fetch(`${API_BASE_URL}/resumes/${id}/download`, { headers });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    failAndNotify(await parseErrorMessage(response));
   }
 
   const disposition = response.headers.get('Content-Disposition') ?? '';

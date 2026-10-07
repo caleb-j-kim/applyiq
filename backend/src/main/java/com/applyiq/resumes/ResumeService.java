@@ -29,6 +29,7 @@ public class ResumeService {
     private final ResumeRepository resumeRepository;
     private final UserService userService;
     private final ResumeStorageService resumeStorageService;
+    private final ResumeTextExtractor resumeTextExtractor;
 
     public Resume upload(UUID userId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -53,6 +54,7 @@ public class ResumeService {
 
         String storageKey = resumeStorageService.newKey(userId);
         resumeStorageService.upload(storageKey, content, file.getContentType());
+        String parsedText = resumeTextExtractor.extract(content, file.getContentType());
 
         Resume resume = Resume.builder()
                 .user(user)
@@ -60,6 +62,7 @@ public class ResumeService {
                 .contentType(file.getContentType())
                 .fileSizeBytes(file.getSize())
                 .storageKey(storageKey)
+                .parsedText(parsedText)
                 .active(isFirstResume)
                 .build();
         return resumeRepository.save(resume);
@@ -68,6 +71,36 @@ public class ResumeService {
     public byte[] download(UUID userId, UUID resumeId) {
         Resume resume = getOwned(userId, resumeId);
         return resumeStorageService.download(resume.getStorageKey());
+    }
+
+    /**
+     * Explicit (re-)extraction route: always re-downloads the stored file and re-runs
+     * ResumeTextExtractor, overwriting whatever parsed_text is already there. For resumes
+     * uploaded before text extraction existed (or seeded directly, bypassing upload()
+     * entirely — see PreviewAccountSeeder), this is the only way they ever get parsed_text
+     * at all; it also doubles as a manual "retry" after fixing a file that failed the first
+     * time (e.g. re-exporting a scanned PDF with a real text layer).
+     */
+    public Resume extractText(UUID userId, UUID resumeId) {
+        Resume resume = getOwned(userId, resumeId);
+        byte[] content = resumeStorageService.download(resume.getStorageKey());
+        resume.setParsedText(resumeTextExtractor.extract(content, resume.getContentType()));
+        return resumeRepository.save(resume);
+    }
+
+    /**
+     * Lazy variant for the match-analysis path: only does the download+extract+save round
+     * trip if parsed_text isn't already there, so a resume that's already been processed
+     * (the normal case) costs nothing extra. Called from ResumeMatchService so analysis
+     * self-heals for any resume missing text instead of just failing outright.
+     */
+    public Resume ensureParsedText(Resume resume) {
+        if (resume.getParsedText() != null && !resume.getParsedText().isBlank()) {
+            return resume;
+        }
+        byte[] content = resumeStorageService.download(resume.getStorageKey());
+        resume.setParsedText(resumeTextExtractor.extract(content, resume.getContentType()));
+        return resumeRepository.save(resume);
     }
 
     public List<ResumeResponse> list(UUID userId) {

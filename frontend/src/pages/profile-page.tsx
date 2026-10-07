@@ -28,14 +28,14 @@ export function ProfilePage() {
     <div className="flex max-w-2xl flex-col gap-6">
       <PageHeader title="Profile" description="Your ApplyIQ account details." />
 
-      <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
+      <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar size="lg">
             <AvatarFallback className="bg-sky-500/15 text-sky-400">{initialsFor(name)}</AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-semibold text-white">{name}</div>
-            <div className="text-sm text-white/50">{email}</div>
+            <div className="font-semibold text-slate-900 dark:text-white">{name}</div>
+            <div className="text-sm text-slate-500 dark:text-white/50">{email}</div>
           </div>
         </CardHeader>
         <CardContent>
@@ -53,7 +53,7 @@ export function ProfilePage() {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="border-white/15 bg-black/30 text-white"
+                  className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 text-slate-900 dark:text-white"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -63,7 +63,7 @@ export function ProfilePage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border-white/15 bg-black/30 text-white"
+                  className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -73,7 +73,7 @@ export function ProfilePage() {
                 id="targetRole"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
-                className="border-white/15 bg-black/30 text-white"
+                className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 text-slate-900 dark:text-white"
               />
             </div>
             <Button type="submit" className="mt-2 w-fit bg-sky-500 text-white hover:bg-sky-400">

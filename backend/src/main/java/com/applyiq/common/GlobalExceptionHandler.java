@@ -1,5 +1,6 @@
 package com.applyiq.common;
 
+import com.applyiq.common.exception.AiServiceException;
 import com.applyiq.common.exception.EmailAlreadyExistsException;
 import com.applyiq.common.exception.InvalidFileException;
 import com.applyiq.common.exception.ResourceNotFoundException;
@@ -46,6 +47,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
         return ResponseEntity.badRequest().body(ApiResponse.error("File exceeds the maximum allowed size"));
+    }
+
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiService(AiServiceException ex) {
+        log.warn("AI service call failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

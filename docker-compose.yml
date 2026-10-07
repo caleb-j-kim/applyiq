@@ -41,6 +41,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       PREVIEW_EMAIL: ${PREVIEW_EMAIL:-caleb.kim@applyiq.com}
       PREVIEW_PASSWORD: ${PREVIEW_PASSWORD:-demo1234}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - "${SERVER_PORT:-8080}:8080"
 

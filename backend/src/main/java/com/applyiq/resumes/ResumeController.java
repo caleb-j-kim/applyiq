@@ -64,6 +64,19 @@ public class ResumeController {
         return ApiResponse.success(ResumeResponse.from(resume));
     }
 
+    /**
+     * (Re-)extracts plain text from the stored file into parsed_text. Match-score analysis
+     * also does this lazily and automatically when text is missing (see ResumeMatchService),
+     * so calling this explicitly isn't required to analyze a resume — it's here so the
+     * frontend can process a resume up front (e.g. right after upload, or as a manual "retry"
+     * action) and show the user whether it actually produced usable text.
+     */
+    @PostMapping("/{id}/extract-text")
+    public ApiResponse<ResumeResponse> extractText(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
+        Resume resume = resumeService.extractText(principal.getUser().getId(), id);
+        return ApiResponse.success(ResumeResponse.from(resume));
+    }
+
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
         resumeService.delete(principal.getUser().getId(), id);

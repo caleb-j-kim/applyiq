@@ -328,6 +328,7 @@ export function ApplicationsPage() {
                       type="date"
                       value={form.dateApplied}
                       onChange={(e) => setForm((f) => ({ ...f, dateApplied: e.target.value }))}
+                      className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 text-slate-900 dark:text-white focus-visible:border-sky-400 focus-visible:ring-sky-400/30"
                     />
                   </div>
                 </div>
@@ -350,7 +351,7 @@ export function ApplicationsPage() {
                   <Label htmlFor="hasReferral">I have a referral for this job</Label>
                 </div>
                 {form.hasReferral && (
-                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/10 p-3">
+                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="referralName">Referral name</Label>
                       <Input
@@ -371,7 +372,7 @@ export function ApplicationsPage() {
                 )}
 
                 {form.status === 'Interviewing' && (
-                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/10 p-3">
+                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
                       <Input
@@ -445,12 +446,12 @@ export function ApplicationsPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-white/40" />
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
           <Input
             placeholder="Search by company or role..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-white/15 bg-black/30 pl-8 text-white"
+            className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 pl-8 text-slate-900 dark:text-white"
           />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ApplicationStatus | 'All')}>
@@ -475,11 +476,11 @@ export function ApplicationsPage() {
         </TabsList>
 
         <TabsContent value="table">
-          <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
+          <Card className="w-[125%] -ml-[12.5%] border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
             <CardContent className="overflow-x-auto px-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/10 hover:bg-transparent">
+                  <TableRow className="border-slate-200 dark:border-white/10 hover:bg-transparent">
                     <TableHead>Company</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Location</TableHead>
@@ -493,26 +494,26 @@ export function ApplicationsPage() {
                 <TableBody>
                   {isLoading && (
                     <TableRow>
-                      <TableCell colSpan={8} className="py-8 text-center text-white/40">
+                      <TableCell colSpan={8} className="py-8 text-center text-slate-400 dark:text-white/40">
                         Loading applications...
                       </TableCell>
                     </TableRow>
                   )}
                   {!isLoading &&
                     filtered.map((app) => (
-                      <TableRow key={app.id} className="border-white/10">
-                        <TableCell className="font-medium text-white">
+                      <TableRow key={app.id} className="border-slate-200 dark:border-white/10">
+                        <TableCell className="font-medium text-slate-900 dark:text-white">
                           <div className="flex items-center gap-1.5">
                             {app.companyName}
                             {app.jobUrl && (
-                              <a href={app.jobUrl} target="_blank" rel="noreferrer" className="text-white/30 hover:text-sky-400">
+                              <a href={app.jobUrl} target="_blank" rel="noreferrer" className="text-slate-400 dark:text-white/30 hover:text-sky-400">
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-white/70">{app.jobTitle}</TableCell>
-                        <TableCell className="text-white/50">{app.location}</TableCell>
+                        <TableCell className="text-slate-600 dark:text-white/70">{app.jobTitle}</TableCell>
+                        <TableCell className="text-slate-500 dark:text-white/50">{app.location}</TableCell>
                         <TableCell className="whitespace-normal">
                           <div className="flex flex-col gap-1">
                             <Select
@@ -531,24 +532,24 @@ export function ApplicationsPage() {
                               </SelectContent>
                             </Select>
                             {app.status === 'Interviewing' && app.interviewStage && (
-                              <span className="text-xs whitespace-nowrap text-white/40">
+                              <span className="text-xs whitespace-nowrap text-slate-400 dark:text-white/40">
                                 {app.interviewRoundsCompleted ?? 0}/{app.interviewRoundsTotal ?? '?'} rounds ·{' '}
                                 {app.interviewStage}
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-white/50">
+                        <TableCell className="text-slate-500 dark:text-white/50">
                           {app.hasReferral ? `Yes — ${app.referralName ?? ''}` : 'No'}
                         </TableCell>
-                        <TableCell className="text-white/50">{app.priorityLevel}</TableCell>
-                        <TableCell className="text-white/50">{app.dateApplied}</TableCell>
+                        <TableCell className="text-slate-500 dark:text-white/50">{app.priorityLevel}</TableCell>
+                        <TableCell className="text-slate-500 dark:text-white/50">{app.dateApplied}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               size="icon-sm"
                               variant="ghost"
-                              className="text-white/50 hover:bg-white/10 hover:text-white"
+                              className="text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                               aria-label={`Edit ${app.companyName}`}
                               onClick={() => openEditDialog(app)}
                             >
@@ -557,7 +558,7 @@ export function ApplicationsPage() {
                             <Button
                               size="icon-sm"
                               variant="ghost"
-                              className="text-white/50 hover:bg-rose-500/10 hover:text-rose-400"
+                              className="text-slate-500 dark:text-white/50 hover:bg-rose-500/10 hover:text-rose-400"
                               aria-label={`Delete ${app.companyName}`}
                               onClick={() => handleDelete(app)}
                             >
@@ -569,7 +570,7 @@ export function ApplicationsPage() {
                     ))}
                   {!isLoading && filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="py-8 text-center text-white/40">
+                      <TableCell colSpan={8} className="py-8 text-center text-slate-400 dark:text-white/40">
                         No applications match your filters.
                       </TableCell>
                     </TableRow>
@@ -581,29 +582,29 @@ export function ApplicationsPage() {
         </TabsContent>
 
         <TabsContent value="kanban">
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          <div className="flex w-[125%] -ml-[12.5%] gap-4 overflow-x-auto pb-2">
             {KANBAN_COLUMNS.map((status) => {
               const columnApps = filtered.filter((a) => a.status === status);
               return (
                 <div key={status} className="w-64 shrink-0">
                   <div className="mb-2 flex items-center justify-between px-1">
                     <StatusBadge status={status} />
-                    <span className="text-xs text-white/40">{columnApps.length}</span>
+                    <span className="text-xs text-slate-400 dark:text-white/40">{columnApps.length}</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     {columnApps.map((app) => (
-                      <Card key={app.id} className="border-white/10 bg-white/[0.03]">
+                      <Card key={app.id} className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]">
                         <CardContent className="px-3 py-3">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <div className="text-sm font-medium text-white">{app.jobTitle}</div>
-                              <div className="text-xs text-white/50">{app.companyName}</div>
+                              <div className="text-sm font-medium text-slate-900 dark:text-white">{app.jobTitle}</div>
+                              <div className="text-xs text-slate-500 dark:text-white/50">{app.companyName}</div>
                             </div>
                             <div className="flex shrink-0 items-center gap-0.5">
                               <Button
                                 size="icon-sm"
                                 variant="ghost"
-                                className="h-6 w-6 text-white/50 hover:bg-white/10 hover:text-white"
+                                className="h-6 w-6 text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                                 aria-label={`Edit ${app.companyName}`}
                                 onClick={() => openEditDialog(app)}
                               >
@@ -612,7 +613,7 @@ export function ApplicationsPage() {
                               <Button
                                 size="icon-sm"
                                 variant="ghost"
-                                className="h-6 w-6 text-white/50 hover:bg-rose-500/10 hover:text-rose-400"
+                                className="h-6 w-6 text-slate-500 dark:text-white/50 hover:bg-rose-500/10 hover:text-rose-400"
                                 aria-label={`Delete ${app.companyName}`}
                                 onClick={() => handleDelete(app)}
                               >
@@ -620,12 +621,12 @@ export function ApplicationsPage() {
                               </Button>
                             </div>
                           </div>
-                          <div className="mt-2 flex items-center justify-between text-xs text-white/40">
+                          <div className="mt-2 flex items-center justify-between text-xs text-slate-400 dark:text-white/40">
                             <span>{app.dateApplied}</span>
                             {app.hasReferral && <span className="text-sky-400">Referred</span>}
                           </div>
                           {app.status === 'Interviewing' && app.interviewStage && (
-                            <div className="mt-1 text-xs text-white/40">
+                            <div className="mt-1 text-xs text-slate-400 dark:text-white/40">
                               {app.interviewRoundsCompleted ?? 0}/{app.interviewRoundsTotal ?? '?'} rounds ·{' '}
                               {app.interviewStage}
                             </div>
@@ -634,7 +635,7 @@ export function ApplicationsPage() {
                       </Card>
                     ))}
                     {columnApps.length === 0 && (
-                      <div className="rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-xs text-white/30">
+                      <div className="rounded-lg border border-dashed border-slate-200 dark:border-white/10 px-3 py-6 text-center text-xs text-slate-400 dark:text-white/30">
                         Empty
                       </div>
                     )}

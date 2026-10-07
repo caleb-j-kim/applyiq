@@ -168,7 +168,7 @@ function FeatureDetailBlock({ feature }: { feature: FeatureDetail }) {
 
 export function FeaturesPage() {
   return (
-    <div className="min-h-svh bg-black">
+    <div className="dark min-h-svh bg-black">
       <Navbar />
 
       <div className="mx-auto max-w-5xl px-6 pt-32 pb-16 sm:pt-40 sm:pb-24">

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import applyiqIcon from '@/assets/images/applyiq-icon.png';
 import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/components/layout/account-menu';
+import { NotificationBell } from '@/components/layout/notification-bell';
 import { useAuth } from '@/context/auth-context';
 import { PREVIEW_ACCOUNT_EMAIL, PREVIEW_ACCOUNT_PASSWORD } from '@/lib/preview-account';
 import { cn } from '@/lib/utils';
@@ -64,14 +65,14 @@ export function Navbar() {
       className={cn(
         'fixed inset-x-0 top-0 z-50 transition-colors duration-300',
         scrolled || open || isAppSection
-          ? 'border-b border-white/10 bg-black/80 backdrop-blur-lg'
+          ? 'border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-lg'
           : 'border-b border-transparent bg-transparent'
       )}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link to={isAppSection ? '/dashboard' : '/'} className="flex items-center gap-2">
           <img src={applyiqIcon} alt="ApplyIQ" className="h-8 w-8 rounded-md" />
-          <span className="text-lg font-bold tracking-tight text-white">
+          <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
             Apply<span className="text-sky-400">IQ</span>
           </span>
         </Link>
@@ -84,8 +85,8 @@ export function Navbar() {
               onClick={link.label === 'Demo' ? handleDemoLogin : undefined}
               className={({ isActive }) =>
                 cn(
-                  'text-sm font-medium text-white/70 transition-colors hover:text-white',
-                  isActive && isAppSection && 'text-white'
+                  'text-sm font-medium text-slate-600 dark:text-white/70 transition-colors hover:text-slate-900 dark:hover:text-white',
+                  isActive && isAppSection && 'text-slate-900 dark:text-white'
                 )
               }
             >
@@ -96,14 +97,17 @@ export function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           {isAppSection ? (
-            <AccountMenu />
+            <>
+              <NotificationBell />
+              <AccountMenu />
+            </>
           ) : (
             <>
               <Button
                 render={<Link to="/login" />}
                 nativeButton={false}
                 variant="ghost"
-                className="text-white/80 hover:bg-white/10 hover:text-white"
+                className="text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               >
                 Log in
               </Button>
@@ -121,7 +125,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-white md:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-900 dark:text-white md:hidden"
           aria-label="Toggle menu"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -129,22 +133,23 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="border-t border-white/10 bg-black/95 px-6 pb-6 md:hidden">
+        <div className="border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-black/95 px-6 pb-6 md:hidden">
           <div className="flex flex-col gap-4 pt-4">
             {links.map((link) => (
               <NavLink
                 key={link.href}
                 to={link.href}
                 onClick={link.label === 'Demo' ? handleDemoLogin : undefined}
-                className="text-sm font-medium text-white/70 hover:text-white"
+                className="text-sm font-medium text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white"
               >
                 {link.label}
               </NavLink>
             ))}
             {isAppSection ? (
-              <div className="mt-2 flex items-center gap-3 border-t border-white/10 pt-4">
+              <div className="mt-2 flex items-center gap-3 border-t border-slate-200 dark:border-white/10 pt-4">
+                <NotificationBell />
                 <AccountMenu />
-                <span className="text-sm text-white/60">Account</span>
+                <span className="text-sm text-slate-500 dark:text-white/60">Account</span>
               </div>
             ) : (
               <div className="mt-2 flex flex-col gap-3">
@@ -152,7 +157,7 @@ export function Navbar() {
                   render={<Link to="/login" />}
                   nativeButton={false}
                   variant="ghost"
-                  className="w-full justify-center text-white/80 hover:bg-white/10 hover:text-white"
+                  className="w-full justify-center text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                 >
                   Log in
                 </Button>

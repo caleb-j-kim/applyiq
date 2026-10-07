@@ -54,6 +54,12 @@ export interface Resume {
   uploadedAt: string;
   isActive: boolean;
   sizeKb: number;
+  hasParsedText: boolean;
+}
+
+export interface ScoredKeyword {
+  name: string;
+  weight: number; // 1-100: how central this keyword is to the role, higher = more expected
 }
 
 export interface ResumeMatchResult {

@@ -20,6 +20,20 @@ export const CHART_INK = {
   axis: '#383835',
 };
 
+// Light-mode counterpart — same roles, re-tuned for a white chart surface.
+export const CHART_INK_LIGHT = {
+  primary: '#0f172a',
+  secondary: '#475569',
+  muted: '#94a3b8',
+  grid: '#e2e8f0',
+  axis: '#cbd5e1',
+};
+
+export const CHART_SURFACE = {
+  dark: { tooltipBg: '#111110', tooltipBorder: 'rgba(255,255,255,0.1)', cursor: 'rgba(255,255,255,0.04)' },
+  light: { tooltipBg: '#ffffff', tooltipBorder: 'rgba(15,23,42,0.1)', cursor: 'rgba(15,23,42,0.04)' },
+};
+
 // Application pipeline stages mapped to fixed categorical slots, in stage order.
 // "Withdrawn" is an administrative dead-state, not a pipeline outcome, so it
 // uses muted gray rather than a categorical hue.

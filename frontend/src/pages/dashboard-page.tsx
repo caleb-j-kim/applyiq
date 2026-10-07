@@ -38,7 +38,8 @@ import {
   mapApplicationResponse,
   type DashboardResponseDto,
 } from '@/lib/mappers';
-import { CATEGORICAL, CHART_INK, STATUS_COLORS } from '@/lib/chart-colors';
+import { CATEGORICAL, CHART_INK, CHART_INK_LIGHT, CHART_SURFACE, STATUS_COLORS } from '@/lib/chart-colors';
+import { useTheme } from '@/context/theme-context';
 import type { ApplicationStatus } from '@/types';
 
 const PIPELINE_STATUSES: ApplicationStatus[] = [
@@ -54,7 +55,7 @@ const PIPELINE_STATUSES: ApplicationStatus[] = [
 
 function ComingSoon({ label }: { label: string }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-white/40">
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-slate-400 dark:text-white/40">
       <Sparkles className="h-5 w-5 text-sky-400/60" />
       <p className="text-sm">{label}</p>
       <p className="text-xs">AI backend not built yet — coming soon.</p>
@@ -63,6 +64,9 @@ function ComingSoon({ label }: { label: string }) {
 }
 
 export function DashboardPage() {
+  const { theme } = useTheme();
+  const ink = theme === 'dark' ? CHART_INK : CHART_INK_LIGHT;
+  const surface = CHART_SURFACE[theme];
   const [dashboard, setDashboard] = useState<DashboardResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,7 +87,7 @@ export function DashboardPage() {
     return (
       <div className="flex flex-col gap-8">
         <PageHeader title="Dashboard" description="Your job search at a glance." />
-        <div className="py-16 text-center text-sm text-white/40">Loading dashboard...</div>
+        <div className="py-16 text-center text-sm text-slate-400 dark:text-white/40">Loading dashboard...</div>
       </div>
     );
   }
@@ -133,28 +137,28 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
+        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Status breakdown</h2>
-            <p className="text-sm text-white/50">Applications by current pipeline stage</p>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Status breakdown</h2>
+            <p className="text-sm text-slate-500 dark:text-white/50">Applications by current pipeline stage</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={statusBreakdown} layout="vertical" margin={{ left: 8, right: 16 }}>
-                <CartesianGrid horizontal={false} stroke={CHART_INK.grid} />
-                <XAxis type="number" allowDecimals={false} tick={{ fill: CHART_INK.muted, fontSize: 12 }} axisLine={{ stroke: CHART_INK.axis }} tickLine={false} />
+                <CartesianGrid horizontal={false} stroke={ink.grid} />
+                <XAxis type="number" allowDecimals={false} tick={{ fill: ink.muted, fontSize: 12 }} axisLine={{ stroke: ink.axis }} tickLine={false} />
                 <YAxis
                   type="category"
                   dataKey="status"
                   width={110}
-                  tick={{ fill: CHART_INK.secondary, fontSize: 12 }}
-                  axisLine={{ stroke: CHART_INK.axis }}
+                  tick={{ fill: ink.secondary, fontSize: 12 }}
+                  axisLine={{ stroke: ink.axis }}
                   tickLine={false}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                  contentStyle={{ background: '#111110', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: CHART_INK.primary }}
-                  labelStyle={{ color: CHART_INK.primary }}
+                  cursor={{ fill: surface.cursor }}
+                  contentStyle={{ background: surface.tooltipBg, border: `1px solid ${surface.tooltipBorder}`, borderRadius: 8, color: ink.primary }}
+                  labelStyle={{ color: ink.primary }}
                 />
                 <Bar dataKey="count" name="Applications" radius={[0, 4, 4, 0]} maxBarSize={18}>
                   {statusBreakdown.map((entry) => (
@@ -166,21 +170,21 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
+        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Weekly application activity</h2>
-            <p className="text-sm text-white/50">Applications submitted per week</p>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Weekly application activity</h2>
+            <p className="text-sm text-slate-500 dark:text-white/50">Applications submitted per week</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={weeklyActivity} margin={{ left: -16, right: 16 }}>
-                <CartesianGrid vertical={false} stroke={CHART_INK.grid} />
-                <XAxis dataKey="week" tick={{ fill: CHART_INK.muted, fontSize: 12 }} axisLine={{ stroke: CHART_INK.axis }} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fill: CHART_INK.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <CartesianGrid vertical={false} stroke={ink.grid} />
+                <XAxis dataKey="week" tick={{ fill: ink.muted, fontSize: 12 }} axisLine={{ stroke: ink.axis }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: ink.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   cursor={{ stroke: CATEGORICAL[0], strokeWidth: 1 }}
-                  contentStyle={{ background: '#111110', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: CHART_INK.primary }}
-                  labelStyle={{ color: CHART_INK.primary }}
+                  contentStyle={{ background: surface.tooltipBg, border: `1px solid ${surface.tooltipBorder}`, borderRadius: 8, color: ink.primary }}
+                  labelStyle={{ color: ink.primary }}
                 />
                 <Line
                   type="monotone"
@@ -198,9 +202,9 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="border-white/10 bg-white/[0.03] backdrop-blur lg:col-span-2">
+        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <h2 className="text-base font-semibold text-white">Recent applications</h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Recent applications</h2>
             <Link to="/applications" className="text-xs font-medium text-sky-400 hover:underline">
               View all
             </Link>
@@ -209,28 +213,28 @@ export function DashboardPage() {
             {recentApplications.map((app) => (
               <div
                 key={app.id}
-                className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 hover:bg-white/[0.04]"
+                className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 hover:bg-slate-100 dark:hover:bg-white/[0.04]"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-white">
+                  <div className="truncate text-sm font-medium text-slate-900 dark:text-white">
                     {app.jobTitle} · {app.companyName}
                   </div>
-                  <div className="text-xs text-white/40">Applied {app.dateApplied}</div>
+                  <div className="text-xs text-slate-400 dark:text-white/40">Applied {app.dateApplied}</div>
                 </div>
                 <StatusBadge status={app.status} className="shrink-0" />
               </div>
             ))}
             {recentApplications.length === 0 && (
-              <div className="py-8 text-center text-sm text-white/40">
+              <div className="py-8 text-center text-sm text-slate-400 dark:text-white/40">
                 No applications yet — add your first one to see it here.
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col border-white/10 bg-white/[0.03] backdrop-blur">
+        <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Highest match jobs</h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Highest match jobs</h2>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
             <ComingSoon label="Resume match scoring" />
@@ -239,20 +243,20 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="flex flex-col border-white/10 bg-white/[0.03] backdrop-blur">
+        <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Upcoming follow-ups</h2>
-            <p className="text-sm text-white/50">Applications ApplyIQ recommends acting on this week</p>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Upcoming follow-ups</h2>
+            <p className="text-sm text-slate-500 dark:text-white/50">Applications ApplyIQ recommends acting on this week</p>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
             <ComingSoon label="Follow-up recommendations" />
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col border-white/10 bg-white/[0.03] backdrop-blur">
+        <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Applications needing attention</h2>
-            <p className="text-sm text-white/50">Highest ghosting risk right now</p>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Applications needing attention</h2>
+            <p className="text-sm text-slate-500 dark:text-white/50">Highest ghosting risk right now</p>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
             <ComingSoon label="Ghosting risk scoring" />

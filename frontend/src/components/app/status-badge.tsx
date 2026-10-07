@@ -7,7 +7,7 @@ export function StatusBadge({ status, className }: { status: ApplicationStatus; 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/80',
+        'inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-white/80',
         className
       )}
     >

@@ -69,7 +69,7 @@ Uploaded resume files, scoped to a user. The DB row holds metadata only —
 | `content_type` | text | must be PDF or Word (`application/pdf`, `.doc`, `.docx`) |
 | `file_size_bytes` | bigint | |
 | `storage_key` | text | S3 object key (`resumes/{userId}/{uuid}`); the actual file bytes live in S3, not this table |
-| `parsed_text` | text, nullable | extracted plain text of the resume; not yet populated — will be filled in by whatever the AI module ends up using for resume ingestion (a parsing library, or skipped entirely if the LLM is sent the raw PDF directly) |
+| `parsed_text` | text, nullable | extracted plain text, populated at upload time by `ResumeTextExtractor` (Apache PDFBox for PDF, Apache POI for `.doc`/`.docx`); null if extraction fails (e.g. a scanned/image-only PDF with no text layer) — analysis endpoints reject a resume with no parsed text rather than silently analyzing nothing |
 | `is_active` | boolean | exactly one resume per user is active at a time — enforced in `ResumeService`, not a DB constraint |
 | `created_at`, `updated_at` | timestamp | |
 
@@ -86,11 +86,33 @@ In-app notifications, scoped to a user, optionally linked to a job application.
 | `read` | boolean | |
 | `created_at` | timestamp | |
 
+### `resume_match_analyses`
+AI-generated resume-to-job match results. `job_application_id` is nullable —
+a "preview" analysis (job description pasted ad hoc, never saved as a
+tracked application) is still persisted for history/cost auditing, just
+without that link.
+
+Keyword list columns hold JSON text, not a normalized child table — these
+are small, write-once, read-as-a-whole blobs with no need to query/filter
+individual keywords, so a join-requiring table would add complexity for no
+benefit.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `user_id` | UUID | FK → `users.id` |
+| `job_application_id` | UUID, nullable | FK → `job_applications.id` |
+| `resume_id` | UUID | FK → `resumes.id` |
+| `match_score` | int | `round(100 * found / total)` over the explicit job-description keyword count |
+| `job_description_keywords`, `found_keywords`, `missing_keywords` | text (JSON) | `[{name, weight}]` — explicit skills, found via zero-LLM dictionary matching in `SkillExtractionService` against `SkillTaxonomy` |
+| `predicted_found_keywords`, `predicted_missing_keywords` | text (JSON) | `[{name, weight}]` — implied/"hidden" skills Claude inferred, split by whether the resume's explicit skill list already covers them |
+| `score_rationale` | text | 1-2 sentence explanation from Claude, specific to this posting/resume |
+| `suggested_resume_bullets` | text (JSON) | `string[]`, only populated when the caller requests it (extra output tokens) |
+| `created_at` | timestamp | |
+
 ## Planned tables (not yet built)
 
-These belong to the `ai` module, which is on hold pending a model-provider
-decision. Listed here for reference so the schema direction is documented:
+Designed but not implemented — still on hold:
 
-- **`resume_match_analyses`** — AI-generated resume-to-job match results (`match_score`, `matched_skills`, `missing_skills`, `experience_gaps`, `suggested_resume_bullets`), linked to a user + job application + resume.
 - **`interview_prep`** — generated interview prep material (`technical_questions`, `behavioral_questions`, `skills_to_review`, `project_talking_points`, `sample_answers`), linked to a user + job application.
 - **`follow_up_recommendations`** — model-generated follow-up/status recommendations (`recommended_action`, `recommended_status`, `ghosting_risk_score`, `confidence_score`, `main_reasons`), linked to a user + job application.

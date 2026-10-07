@@ -32,7 +32,7 @@ export function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-black px-6 py-24">
+    <div className="dark flex min-h-svh items-center justify-center bg-black px-6 py-24">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
           <Link to="/" className="flex items-center gap-2">

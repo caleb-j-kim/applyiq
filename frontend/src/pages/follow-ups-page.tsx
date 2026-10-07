@@ -22,10 +22,10 @@ const ACTION_ICON: Record<RecommendedAction, typeof Send> = {
 const ACTION_STYLE: Record<RecommendedAction, string> = {
   'Send first follow-up': 'text-sky-400 bg-sky-500/10',
   'Send final follow-up': 'text-amber-400 bg-amber-500/10',
-  'Wait longer': 'text-white/60 bg-white/10',
+  'Wait longer': 'text-slate-500 dark:text-white/60 bg-slate-100 dark:bg-white/10',
   'Mark as likely ghosted': 'text-rose-400 bg-rose-500/10',
   'Move to rejected': 'text-rose-400 bg-rose-500/10',
-  'Archive application': 'text-white/50 bg-white/10',
+  'Archive application': 'text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/10',
 };
 
 export function FollowUpsPage() {
@@ -42,8 +42,8 @@ export function FollowUpsPage() {
       />
 
       {recommendations.length === 0 && (
-        <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
-          <CardContent className="py-16 text-center text-sm text-white/40">
+        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <CardContent className="py-16 text-center text-sm text-slate-400 dark:text-white/40">
             You're all caught up — no follow-ups needed right now.
           </CardContent>
         </Card>
@@ -53,7 +53,7 @@ export function FollowUpsPage() {
         {recommendations.map((rec) => {
           const Icon = ACTION_ICON[rec.recommendedAction];
           return (
-            <Card key={rec.applicationId} className="border-white/10 bg-white/[0.03] backdrop-blur">
+            <Card key={rec.applicationId} className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
               <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex gap-3">
                   <div className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', ACTION_STYLE[rec.recommendedAction])}>
@@ -61,13 +61,13 @@ export function FollowUpsPage() {
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-white">{rec.companyName}</span>
-                      <span className="text-white/40">·</span>
-                      <span className="text-white/70">{rec.jobTitle}</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{rec.companyName}</span>
+                      <span className="text-slate-400 dark:text-white/40">·</span>
+                      <span className="text-slate-600 dark:text-white/70">{rec.jobTitle}</span>
                       <StatusBadge status={rec.status} />
                     </div>
-                    <p className="mt-1 text-sm text-white/60">{rec.reason}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-white/40">
+                    <p className="mt-1 text-sm text-slate-500 dark:text-white/60">{rec.reason}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400 dark:text-white/40">
                       <span>Days since applied: {rec.daysSinceApplied}</span>
                       <span>Ghosting risk: {Math.round(rec.ghostingRiskScore * 100)}%</span>
                     </div>
@@ -81,7 +81,7 @@ export function FollowUpsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-white/15 bg-transparent text-white/70 hover:bg-white/10"
+                    className="border-slate-300 dark:border-white/15 bg-transparent text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10"
                     onClick={() => setDismissed((prev) => new Set(prev).add(rec.applicationId))}
                   >
                     Mark as done

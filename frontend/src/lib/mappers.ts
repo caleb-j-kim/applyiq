@@ -1,4 +1,4 @@
-import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel, Resume } from '@/types';
+import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel, Resume, ScoredKeyword } from '@/types';
 
 export const STATUS_TO_API: Record<ApplicationStatus, string> = {
   Saved: 'SAVED',
@@ -157,6 +157,7 @@ export function mapResumeResponse(dto: ResumeResponseDto): Resume {
     uploadedAt: dto.createdAt.slice(0, 10),
     isActive: dto.active,
     sizeKb: Math.round(dto.fileSizeBytes / 1024),
+    hasParsedText: Boolean(dto.parsedText && dto.parsedText.trim()),
   };
 }
 
@@ -176,6 +177,23 @@ export interface DashboardResponseDto {
   statusBreakdown: { status: string; count: number }[];
   weeklyActivity: { weekStart: string; applications: number }[];
   recentApplications: JobApplicationResponseDto[];
+}
+
+// Matches backend com.applyiq.ai.MatchAnalysisResponse field-for-field — no mapper
+// function needed, the JSON already deserializes directly into this shape.
+export interface MatchAnalysisResponseDto {
+  id: string;
+  resumeId: string;
+  jobApplicationId: string | null;
+  matchScore: number;
+  jdKeywords: ScoredKeyword[];
+  foundInResume: ScoredKeyword[];
+  missed: ScoredKeyword[];
+  predictedFound: ScoredKeyword[];
+  predictedMissed: ScoredKeyword[];
+  scoreRationale: string;
+  suggestedResumeBullets: string[];
+  createdAt: string;
 }
 
 export function formatWeekLabel(isoDate: string): string {
