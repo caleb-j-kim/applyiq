@@ -18,6 +18,24 @@
     }
 }
 
+/* Match-results motion, timed like Recharts' defaults (1.5s, ease) so it feels the same as the
+   Dashboard/Analytics charts. "backwards" holds the start frame during a stagger delay. */
+@theme {
+    --animate-bar-grow: bar-grow 1.5s ease backwards;
+    --animate-ring-sweep: ring-sweep 1.5s ease backwards;
+    --animate-fade-up: fade-up 0.6s ease backwards;
+
+    @keyframes bar-grow {
+        from { width: 0; }
+    }
+    @keyframes ring-sweep {
+        from { stroke-dashoffset: var(--ring-from); }
+    }
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(8px); }
+    }
+}
+
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;

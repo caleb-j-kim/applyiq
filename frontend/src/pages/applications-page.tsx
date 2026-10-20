@@ -1,23 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ExternalLink, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { ExternalLink, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useApplicationFilters } from '@/components/app/application-filters';
+import { ApplicationFormFields, emptyApplicationForm } from '@/components/app/application-form-fields';
 import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NumberInput } from '@/components/ui/number-input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -44,62 +35,7 @@ import {
   type ApplicationFormValues,
   type JobApplicationResponseDto,
 } from '@/lib/mappers';
-import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel } from '@/types';
-
-const ALL_STATUSES: ApplicationStatus[] = [
-  'Saved',
-  'Applied',
-  'Online Assessment',
-  'Interviewing',
-  'Final Round',
-  'Offer',
-  'Rejected',
-  'Ghosted',
-  'Withdrawn',
-];
-
-const KANBAN_COLUMNS: ApplicationStatus[] = [
-  'Saved',
-  'Applied',
-  'Online Assessment',
-  'Interviewing',
-  'Final Round',
-  'Offer',
-  'Rejected',
-  'Ghosted',
-  'Withdrawn',
-];
-
-const INTERVIEW_STAGES: InterviewStage[] = [
-  'Phone Screening',
-  'First Round',
-  'Second Round',
-  'Third Round',
-  'Fourth Round',
-  'Fifth Round',
-  'Final Round',
-];
-
-const PRIORITIES: PriorityLevel[] = ['Low', 'Medium', 'High'];
-
-const emptyForm: ApplicationFormValues = {
-  companyName: '',
-  jobTitle: '',
-  location: '',
-  jobUrl: '',
-  status: 'Applied',
-  source: '',
-  dateApplied: new Date().toISOString().slice(0, 10),
-  priorityLevel: 'Medium',
-  hasReferral: false,
-  referralName: '',
-  referralContactInfo: '',
-  jobDescription: '',
-  notes: '',
-  interviewRoundsTotal: '',
-  interviewRoundsCompleted: '',
-  interviewStage: '',
-};
+import { APPLICATION_STATUSES, type ApplicationStatus, type JobApplication } from '@/types';
 
 function toFormValues(app: JobApplication): ApplicationFormValues {
   return {
@@ -126,11 +62,9 @@ export function ApplicationsPage() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'All'>('All');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<ApplicationFormValues>(emptyForm);
+  const [form, setForm] = useState<ApplicationFormValues>(emptyApplicationForm);
 
   const fetchApplications = async () => {
     try {
@@ -147,20 +81,11 @@ export function ApplicationsPage() {
     fetchApplications();
   }, []);
 
-  const filtered = useMemo(() => {
-    return applications
-      .filter((app) => statusFilter === 'All' || app.status === statusFilter)
-      .filter((app) => {
-        const q = search.trim().toLowerCase();
-        if (!q) return true;
-        return app.companyName.toLowerCase().includes(q) || app.jobTitle.toLowerCase().includes(q);
-      })
-      .sort((a, b) => (a.dateApplied < b.dateApplied ? 1 : -1));
-  }, [applications, search, statusFilter]);
+  const { filtered, filterBar } = useApplicationFilters(applications);
 
   const openAddDialog = () => {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm(emptyApplicationForm);
     setDialogOpen(true);
   };
 
@@ -184,7 +109,7 @@ export function ApplicationsPage() {
       }
       await fetchApplications();
       setDialogOpen(false);
-      setForm(emptyForm);
+      setForm(emptyApplicationForm);
       setEditingId(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to save application');
@@ -228,7 +153,7 @@ export function ApplicationsPage() {
               setDialogOpen(open);
               if (!open) {
                 setEditingId(null);
-                setForm(emptyForm);
+                setForm(emptyApplicationForm);
               }
             }}
           >
@@ -246,181 +171,7 @@ export function ApplicationsPage() {
                 </DialogDescription>
               </DialogHeader>
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="companyName">Company name</Label>
-                    <Input
-                      id="companyName"
-                      required
-                      value={form.companyName}
-                      onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="jobTitle">Job title</Label>
-                    <Input
-                      id="jobTitle"
-                      required
-                      value={form.jobTitle}
-                      onChange={(e) => setForm((f) => ({ ...f, jobTitle: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={form.location}
-                      onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="jobUrl">Job posting URL</Label>
-                    <Input
-                      id="jobUrl"
-                      type="url"
-                      value={form.jobUrl}
-                      onChange={(e) => setForm((f) => ({ ...f, jobUrl: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Status</Label>
-                    <Select
-                      value={form.status}
-                      onValueChange={(v) => setForm((f) => ({ ...f, status: v as ApplicationStatus }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ALL_STATUSES.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Priority</Label>
-                    <Select
-                      value={form.priorityLevel}
-                      onValueChange={(v) => setForm((f) => ({ ...f, priorityLevel: v as PriorityLevel }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRIORITIES.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {p}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="dateApplied">Date applied</Label>
-                    <Input
-                      id="dateApplied"
-                      type="date"
-                      value={form.dateApplied}
-                      onChange={(e) => setForm((f) => ({ ...f, dateApplied: e.target.value }))}
-                      className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 text-slate-900 dark:text-white focus-visible:border-sky-400 focus-visible:ring-sky-400/30"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="source">Application source</Label>
-                  <Input
-                    id="source"
-                    placeholder="LinkedIn, company website, referral..."
-                    value={form.source}
-                    onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="hasReferral"
-                    checked={form.hasReferral}
-                    onCheckedChange={(checked) => setForm((f) => ({ ...f, hasReferral: checked === true }))}
-                  />
-                  <Label htmlFor="hasReferral">I have a referral for this job</Label>
-                </div>
-                {form.hasReferral && (
-                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="referralName">Referral name</Label>
-                      <Input
-                        id="referralName"
-                        value={form.referralName}
-                        onChange={(e) => setForm((f) => ({ ...f, referralName: e.target.value }))}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="referralContactInfo">Referral contact</Label>
-                      <Input
-                        id="referralContactInfo"
-                        value={form.referralContactInfo}
-                        onChange={(e) => setForm((f) => ({ ...f, referralContactInfo: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {form.status === 'Interviewing' && (
-                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
-                      <NumberInput id="interviewRoundsTotal" value={form.interviewRoundsTotal} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsTotal: v }))} />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
-                      <NumberInput id="interviewRoundsCompleted" value={form.interviewRoundsCompleted} max={Number(form.interviewRoundsTotal) || undefined} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsCompleted: v }))} />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1.5">
-                      <Label>Current interview stage</Label>
-                      <Select
-                        value={form.interviewStage}
-                        onValueChange={(v) => setForm((f) => ({ ...f, interviewStage: v as InterviewStage }))}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a stage" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {INTERVIEW_STAGES.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="jobDescription">Job description</Label>
-                  <Textarea
-                    id="jobDescription"
-                    rows={3}
-                    value={form.jobDescription}
-                    onChange={(e) => setForm((f) => ({ ...f, jobDescription: e.target.value }))}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    rows={2}
-                    value={form.notes}
-                    onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  />
-                </div>
+                <ApplicationFormFields form={form} setForm={setForm} requireJobDetails />
 
                 <DialogFooter>
                   <Button type="submit" disabled={isSubmitting} className="bg-sky-500 text-white hover:bg-sky-400">
@@ -433,30 +184,7 @@ export function ApplicationsPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
-          <Input
-            placeholder="Search by company or role..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 pl-8 text-slate-900 dark:text-white"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ApplicationStatus | 'All')}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All statuses</SelectItem>
-            {ALL_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {filterBar}
 
       <Tabs defaultValue="table">
         <TabsList>
@@ -465,7 +193,7 @@ export function ApplicationsPage() {
         </TabsList>
 
         <TabsContent value="table">
-          <Card className="relative left-1/2 w-[min(calc(100vw-4rem),128rem)] -translate-x-1/2 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card className="relative left-1/2 w-[min(calc(100vw-4rem),128rem)] -translate-x-1/2">
             <CardContent className="overflow-x-auto px-0">
               <Table>
                 <TableHeader>
@@ -509,11 +237,11 @@ export function ApplicationsPage() {
                               value={app.status}
                               onValueChange={(v) => handleStatusChange(app.id, v as ApplicationStatus)}
                             >
-                              <SelectTrigger className="h-auto w-auto border-none bg-transparent p-0 shadow-none">
-                                <StatusBadge status={app.status} />
+                              <SelectTrigger className="w-full rounded-full border-none bg-transparent p-0 pr-2 shadow-none">
+                                <StatusBadge status={app.status} className="h-full flex-1" />
                               </SelectTrigger>
                               <SelectContent>
-                                {ALL_STATUSES.map((s) => (
+                                {APPLICATION_STATUSES.map((s) => (
                                   <SelectItem key={s} value={s}>
                                     {s}
                                   </SelectItem>
@@ -572,7 +300,7 @@ export function ApplicationsPage() {
 
         <TabsContent value="kanban">
           <div className="flex w-[125%] -ml-[12.5%] gap-4 overflow-x-auto pb-2">
-            {KANBAN_COLUMNS.map((status) => {
+            {APPLICATION_STATUSES.map((status) => {
               const columnApps = filtered.filter((a) => a.status === status);
               return (
                 <div key={status} className="w-64 shrink-0">
@@ -582,7 +310,7 @@ export function ApplicationsPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {columnApps.map((app) => (
-                      <Card key={app.id} className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]">
+                      <Card key={app.id} >
                         <CardContent className="px-3 py-3">
                           <div className="flex items-start justify-between gap-2">
                             <div>

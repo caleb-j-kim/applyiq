@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { CheckCircle2, Circle, FolderKanban, PencilLine, Search, Upload } from 'lucide-react';
+import { CheckCircle2, Circle, FolderKanban, PencilLine, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useApplicationFilters } from '@/components/app/application-filters';
+import { ApplicationFormFields, emptyApplicationForm } from '@/components/app/application-form-fields';
 import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NumberInput } from '@/components/ui/number-input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Select,
@@ -47,33 +44,9 @@ import {
 } from '@/lib/mappers';
 import { cn } from '@/lib/utils';
 import { loadResumeMatchResults, saveResumeMatchResults, type ResumeMatchResultsState } from '@/lib/resume-match-results';
-import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel, Resume } from '@/types';
+import type { JobApplication, Resume } from '@/types';
 
 type Mode = 'manual' | 'existing';
-
-const ALL_STATUSES: ApplicationStatus[] = [
-  'Saved',
-  'Applied',
-  'Online Assessment',
-  'Interviewing',
-  'Final Round',
-  'Offer',
-  'Rejected',
-  'Ghosted',
-  'Withdrawn',
-];
-
-const INTERVIEW_STAGES: InterviewStage[] = [
-  'Phone Screening',
-  'First Round',
-  'Second Round',
-  'Third Round',
-  'Fourth Round',
-  'Fifth Round',
-  'Final Round',
-];
-
-const PRIORITIES: PriorityLevel[] = ['Low', 'Medium', 'High'];
 
 const ALLOWED_RESUME_TYPES = new Set([
   'application/pdf',
@@ -81,25 +54,6 @@ const ALLOWED_RESUME_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
-
-const emptyForm: ApplicationFormValues = {
-  companyName: '',
-  jobTitle: '',
-  location: '',
-  jobUrl: '',
-  status: 'Saved',
-  source: '',
-  dateApplied: new Date().toISOString().slice(0, 10),
-  priorityLevel: 'Medium',
-  hasReferral: false,
-  referralName: '',
-  referralContactInfo: '',
-  jobDescription: '',
-  notes: '',
-  interviewRoundsTotal: '',
-  interviewRoundsCompleted: '',
-  interviewStage: '',
-};
 
 function ModeOption({
   selected,
@@ -210,7 +164,7 @@ export function ResumeMatchPage() {
   };
 
   // Manual-entry mode.
-  const [form, setForm] = useState<ApplicationFormValues>(emptyForm);
+  const [form, setForm] = useState<ApplicationFormValues>({ ...emptyApplicationForm, status: 'Saved' });
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -219,8 +173,6 @@ export function ResumeMatchPage() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(true);
   const [selectedApplicationId, setSelectedApplicationId] = useState('');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'All'>('All');
 
   useEffect(() => {
     (async () => {
@@ -235,16 +187,7 @@ export function ResumeMatchPage() {
     })();
   }, []);
 
-  const filteredApplications = useMemo(() => {
-    return applications
-      .filter((app) => statusFilter === 'All' || app.status === statusFilter)
-      .filter((app) => {
-        const q = search.trim().toLowerCase();
-        if (!q) return true;
-        return app.companyName.toLowerCase().includes(q) || app.jobTitle.toLowerCase().includes(q);
-      })
-      .sort((a, b) => (a.dateApplied < b.dateApplied ? 1 : -1));
-  }, [applications, search, statusFilter]);
+  const { filtered: filteredApplications, filterBar } = useApplicationFilters(applications);
 
   const handleManualSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -366,13 +309,18 @@ export function ResumeMatchPage() {
         />
       </div>
 
-      <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+      <Card>
         <CardHeader className="items-center text-center">
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Resume</h2>
           <p className="text-sm text-slate-500 dark:text-white/50">Choose which resume to score against.</p>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-3">
-          <Select value={selectedResumeId} onValueChange={(v) => setSelectedResumeId(v ?? '')} disabled={resumesLoading || resumes.length === 0}>
+          <Select
+            value={selectedResumeId}
+            onValueChange={(v) => setSelectedResumeId(v ?? '')}
+            disabled={resumesLoading || resumes.length === 0}
+            items={resumes.map((r) => ({ value: r.id, label: `${r.fileName}${r.isActive ? ' (Active)' : ''}` }))}
+          >
             <SelectTrigger className="w-full sm:w-80">
               <SelectValue placeholder={resumesLoading ? 'Loading resumes...' : 'Select a resume'} />
             </SelectTrigger>
@@ -413,177 +361,7 @@ export function ResumeMatchPage() {
 
       {mode === 'manual' ? (
         <form className="flex flex-col gap-4" onSubmit={handleManualSubmit}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="companyName">Company name</Label>
-              <Input
-                id="companyName"
-                value={form.companyName}
-                onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="jobTitle">Job title</Label>
-              <Input
-                id="jobTitle"
-                value={form.jobTitle}
-                onChange={(e) => setForm((f) => ({ ...f, jobTitle: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={form.location}
-                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="jobUrl">Job posting URL</Label>
-              <Input
-                id="jobUrl"
-                type="url"
-                value={form.jobUrl}
-                onChange={(e) => setForm((f) => ({ ...f, jobUrl: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="flex flex-col gap-1.5">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as ApplicationStatus }))}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALL_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Priority</Label>
-              <Select value={form.priorityLevel} onValueChange={(v) => setForm((f) => ({ ...f, priorityLevel: v as PriorityLevel }))}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dateApplied">Date applied</Label>
-              <Input
-                id="dateApplied"
-                type="date"
-                value={form.dateApplied}
-                onChange={(e) => setForm((f) => ({ ...f, dateApplied: e.target.value }))}
-                className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 text-slate-900 dark:text-white focus-visible:border-sky-400 focus-visible:ring-sky-400/30"
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex flex-col gap-1.5">
-            <Label htmlFor="source">Application source</Label>
-            <Input
-              id="source"
-              placeholder="LinkedIn, company website, referral..."
-              value={form.source}
-              onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="hasReferral"
-              checked={form.hasReferral}
-              onCheckedChange={(checked) => setForm((f) => ({ ...f, hasReferral: checked === true }))}
-            />
-            <Label htmlFor="hasReferral">I have a referral for this job</Label>
-          </div>
-          {form.hasReferral && (
-            <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="referralName">Referral name</Label>
-                <Input
-                  id="referralName"
-                  value={form.referralName}
-                  onChange={(e) => setForm((f) => ({ ...f, referralName: e.target.value }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="referralContactInfo">Referral contact</Label>
-                <Input
-                  id="referralContactInfo"
-                  value={form.referralContactInfo}
-                  onChange={(e) => setForm((f) => ({ ...f, referralContactInfo: e.target.value }))}
-                />
-              </div>
-            </div>
-          )}
-
-          {form.status === 'Interviewing' && (
-            <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
-                <NumberInput id="interviewRoundsTotal" value={form.interviewRoundsTotal} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsTotal: v }))} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
-                <NumberInput id="interviewRoundsCompleted" value={form.interviewRoundsCompleted} max={Number(form.interviewRoundsTotal) || undefined} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsCompleted: v }))} />
-              </div>
-              <div className="col-span-1 flex flex-col gap-1.5 sm:col-span-2">
-                <Label>Current interview stage</Label>
-                <Select
-                  value={form.interviewStage}
-                  onValueChange={(v) => setForm((f) => ({ ...f, interviewStage: v as InterviewStage }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a stage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INTERVIEW_STAGES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-col gap-1.5">
-            <Label htmlFor="jobDescription">
-              Job description <span className="text-rose-400">*</span>
-            </Label>
-            <Textarea
-              id="jobDescription"
-              required
-              rows={8}
-              placeholder="Paste the full job posting here..."
-              value={form.jobDescription}
-              onChange={(e) => setForm((f) => ({ ...f, jobDescription: e.target.value }))}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-          </div>
+          <ApplicationFormFields form={form} setForm={setForm} requireJobDescription />
 
           <Button type="submit" disabled={isAnalyzing} className="mx-auto mt-10 w-fit bg-sky-500 text-white hover:bg-sky-400">
             {isAnalyzing ? 'Analyzing...' : 'Analyze Match'}
@@ -591,32 +369,9 @@ export function ResumeMatchPage() {
         </form>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-white/40" />
-              <Input
-                placeholder="Search by company or role..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-black/30 pl-8 text-slate-900 dark:text-white"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ApplicationStatus | 'All')}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All statuses</SelectItem>
-                {ALL_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {filterBar}
 
-          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card>
             <CardContent className="overflow-x-auto px-0">
               <Table>
                 <TableHeader>

@@ -3,9 +3,10 @@ package com.applyiq.ai;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Pure-Java, zero-LLM-token explicit keyword extraction. Dictionary/substring
@@ -33,23 +34,9 @@ public class SkillExtractionService {
                 .toList();
     }
 
-    /** Keywords present in {@code candidates} whose name is also present in {@code haystack}. */
-    public List<ScoredKeyword> intersect(List<ScoredKeyword> candidates, List<ScoredKeyword> haystack) {
-        Set<String> haystackNames = toLowerNameSet(haystack);
-        return candidates.stream().filter(k -> haystackNames.contains(k.name().toLowerCase())).toList();
-    }
-
-    /** Keywords present in {@code candidates} whose name is NOT present in {@code haystack}. */
-    public List<ScoredKeyword> difference(List<ScoredKeyword> candidates, List<ScoredKeyword> haystack) {
-        Set<String> haystackNames = toLowerNameSet(haystack);
-        return candidates.stream().filter(k -> !haystackNames.contains(k.name().toLowerCase())).toList();
-    }
-
-    private static Set<String> toLowerNameSet(List<ScoredKeyword> keywords) {
-        Set<String> names = new LinkedHashSet<>();
-        for (ScoredKeyword k : keywords) {
-            names.add(k.name().toLowerCase());
-        }
-        return names;
+    /** Splits {@code candidates} by whether each name also appears in {@code haystack}: true = present, false = missing. */
+    public Map<Boolean, List<ScoredKeyword>> splitByPresence(List<ScoredKeyword> candidates, List<ScoredKeyword> haystack) {
+        Set<String> haystackNames = haystack.stream().map(k -> k.name().toLowerCase()).collect(Collectors.toSet());
+        return candidates.stream().collect(Collectors.partitioningBy(k -> haystackNames.contains(k.name().toLowerCase())));
     }
 }

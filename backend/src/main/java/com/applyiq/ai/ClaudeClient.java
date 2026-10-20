@@ -1,6 +1,7 @@
 package com.applyiq.ai;
 
 import com.applyiq.common.exception.AiServiceException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -94,16 +95,45 @@ public class ClaudeClient {
     // of whatever Jackson version Spring's web layer is wired to.
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final String TOOL_DEFINITION_JSON = """
+            {
+              "name": "%s",
+              "description": "Submit the structured resume-to-job match analysis.",
+              "input_schema": {
+                "type": "object",
+                "properties": {
+                  "predictedKeywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "weight": {"type": "integer", "minimum": 1, "maximum": 100},
+                        "foundInResume": {"type": "boolean"}
+                      },
+                      "required": ["name", "weight", "foundInResume"]
+                    }
+                  },
+                  "scoreRationale": {"type": "string"},
+                  "suggestedResumeBullets": {"type": "array", "items": {"type": "string"}}
+                },
+                "required": ["predictedKeywords", "scoreRationale"]
+              }
+            }
+            """.formatted(TOOL_NAME);
+
     private final RestClient anthropicRestClient;
     private final String model;
     private final int maxTokens;
+    private final JsonNode toolDefinition;
 
     public ClaudeClient(RestClient anthropicRestClient,
                          @Value("${app.anthropic.model}") String model,
-                         @Value("${app.anthropic.max-tokens:1024}") int maxTokens) {
+                         @Value("${app.anthropic.max-tokens:1024}") int maxTokens) throws JsonProcessingException {
         this.anthropicRestClient = anthropicRestClient;
         this.model = model;
         this.maxTokens = maxTokens;
+        this.toolDefinition = objectMapper.readTree(TOOL_DEFINITION_JSON);
     }
 
     public record PredictedKeyword(String name, int weight, boolean foundInResume) {
@@ -165,8 +195,7 @@ public class ClaudeClient {
         userMessage.put("role", "user");
         userMessage.put("content", buildUserTurn(cleanedJobDescription, jdSkills, resumeSkills, includeBulletSuggestions));
 
-        ArrayNode tools = root.putArray("tools");
-        tools.add(buildToolDefinition());
+        root.putArray("tools").add(toolDefinition);
 
         ObjectNode toolChoice = root.putObject("tool_choice");
         toolChoice.put("type", "tool");
@@ -206,42 +235,6 @@ public class ClaudeClient {
         return skills.stream()
                 .map(k -> k.name() + " (" + k.weight() + ")")
                 .collect(Collectors.joining(", "));
-    }
-
-    private ObjectNode buildToolDefinition() {
-        ObjectNode tool = objectMapper.createObjectNode();
-        tool.put("name", TOOL_NAME);
-        tool.put("description", "Submit the structured resume-to-job match analysis.");
-
-        ObjectNode schema = tool.putObject("input_schema");
-        schema.put("type", "object");
-
-        ObjectNode properties = schema.putObject("properties");
-
-        ObjectNode predictedKeywords = properties.putObject("predictedKeywords");
-        predictedKeywords.put("type", "array");
-        ObjectNode predictedKeywordItems = predictedKeywords.putObject("items");
-        predictedKeywordItems.put("type", "object");
-        ObjectNode predictedKeywordProps = predictedKeywordItems.putObject("properties");
-        predictedKeywordProps.putObject("name").put("type", "string");
-        ObjectNode weightSchema = predictedKeywordProps.putObject("weight");
-        weightSchema.put("type", "integer");
-        weightSchema.put("minimum", 1);
-        weightSchema.put("maximum", 100);
-        predictedKeywordProps.putObject("foundInResume").put("type", "boolean");
-        ArrayNode predictedKeywordRequired = predictedKeywordItems.putArray("required");
-        predictedKeywordRequired.add("name").add("weight").add("foundInResume");
-
-        properties.putObject("scoreRationale").put("type", "string");
-
-        ObjectNode bullets = properties.putObject("suggestedResumeBullets");
-        bullets.put("type", "array");
-        bullets.putObject("items").put("type", "string");
-
-        ArrayNode required = schema.putArray("required");
-        required.add("predictedKeywords").add("scoreRationale");
-
-        return tool;
     }
 
     private AnalysisResult parseToolUseResponse(JsonNode response) {

@@ -48,9 +48,6 @@ public class DashboardService {
         long interviewedWithReferral = applications.stream()
                 .filter(a -> a.isHasReferral() && INTERVIEWED_STATUSES.contains(a.getStatus()))
                 .count();
-        long interviewedWithoutReferral = applications.stream()
-                .filter(a -> !a.isHasReferral() && INTERVIEWED_STATUSES.contains(a.getStatus()))
-                .count();
 
         // History-based, not status-based: a completed interview round still counts toward the
         // rate even after the application moves on to Offer/Rejected/etc. It only stops counting

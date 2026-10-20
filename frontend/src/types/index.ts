@@ -1,24 +1,31 @@
-export type ApplicationStatus =
-  | 'Saved'
-  | 'Applied'
-  | 'Online Assessment'
-  | 'Interviewing'
-  | 'Final Round'
-  | 'Offer'
-  | 'Rejected'
-  | 'Ghosted'
-  | 'Withdrawn';
+// Single source for the option lists the forms, filters and boards iterate over;
+// the union types are derived from them so the two can't drift apart.
+export const APPLICATION_STATUSES = [
+  'Saved',
+  'Applied',
+  'Online Assessment',
+  'Interviewing',
+  'Final Round',
+  'Offer',
+  'Rejected',
+  'Ghosted',
+  'Withdrawn',
+] as const;
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
-export type InterviewStage =
-  | 'Phone Screening'
-  | 'First Round'
-  | 'Second Round'
-  | 'Third Round'
-  | 'Fourth Round'
-  | 'Fifth Round'
-  | 'Final Round';
+export const INTERVIEW_STAGES = [
+  'Phone Screening',
+  'First Round',
+  'Second Round',
+  'Third Round',
+  'Fourth Round',
+  'Fifth Round',
+  'Final Round',
+] as const;
+export type InterviewStage = (typeof INTERVIEW_STAGES)[number];
 
-export type PriorityLevel = 'Low' | 'Medium' | 'High';
+export const PRIORITY_LEVELS = ['Low', 'Medium', 'High'] as const;
+export type PriorityLevel = (typeof PRIORITY_LEVELS)[number];
 
 export interface JobApplication {
   id: string;
@@ -42,7 +49,6 @@ export interface JobApplication {
   jobDescription?: string;
   notes?: string;
   followUpCount: number;
-  matchScore?: number;
   interviewRoundsTotal?: number;
   interviewRoundsCompleted?: number;
   interviewStage?: InterviewStage;
@@ -60,23 +66,6 @@ export interface Resume {
 export interface ScoredKeyword {
   name: string;
   weight: number; // 1-100: how central this keyword is to the role, higher = more expected
-}
-
-export interface ResumeMatchResult {
-  matchScore: number;
-  matchedSkills: string[];
-  missingSkills: string[];
-  experienceGaps: string[];
-  suggestedBullets: string[];
-}
-
-export type InterviewType = 'Technical' | 'Behavioral' | 'System Design' | 'Full-Stack' | 'AI/ML';
-
-export interface InterviewPrepResult {
-  technicalQuestions: string[];
-  behavioralQuestions: string[];
-  skillsToReview: string[];
-  talkingPoints: string[];
 }
 
 export type RecommendedAction =

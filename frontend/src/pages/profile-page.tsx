@@ -28,7 +28,7 @@ export function ProfilePage() {
     <div className="flex max-w-2xl flex-col gap-6">
       <PageHeader title="Profile" description="Your ApplyIQ account details." />
 
-      <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+      <Card>
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar size="lg">
             <AvatarFallback className="bg-sky-500/15 text-sky-400">{initialsFor(name)}</AvatarFallback>

@@ -140,7 +140,7 @@ export function AnalyticsPage() {
       <PageHeader title="Analytics" description="Patterns across your entire job search." />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Applications by status</h2>
           </CardHeader>
@@ -177,7 +177,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Weekly applications</h2>
           </CardHeader>
@@ -202,7 +202,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Resume match score distribution</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">
@@ -237,7 +237,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Most common missing skills</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">
@@ -278,7 +278,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur lg:col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Response rate by source</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">Share of applications from each source that got a response</p>

@@ -42,7 +42,7 @@ export function FollowUpsPage() {
       />
 
       {recommendations.length === 0 && (
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardContent className="py-16 text-center text-sm text-slate-400 dark:text-white/40">
             You're all caught up — no follow-ups needed right now.
           </CardContent>
@@ -53,7 +53,7 @@ export function FollowUpsPage() {
         {recommendations.map((rec) => {
           const Icon = ACTION_ICON[rec.recommendedAction];
           return (
-            <Card key={rec.applicationId} className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+            <Card key={rec.applicationId} >
               <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex gap-3">
                   <div className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', ACTION_STYLE[rec.recommendedAction])}>

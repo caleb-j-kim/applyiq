@@ -48,9 +48,8 @@ public class ResumeController {
 
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> download(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
-        UUID userId = principal.getUser().getId();
-        Resume resume = resumeService.getOwned(userId, id);
-        byte[] content = resumeService.download(userId, id);
+        Resume resume = resumeService.getOwned(principal.getUser().getId(), id);
+        byte[] content = resumeService.download(resume);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(resume.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,

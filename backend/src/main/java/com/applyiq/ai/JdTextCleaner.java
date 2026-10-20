@@ -1,7 +1,9 @@
 package com.applyiq.ai;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Strips paragraphs that are pure noise for skill inference before a job
@@ -30,27 +32,11 @@ final class JdTextCleaner {
         if (jobDescription == null || jobDescription.isBlank()) {
             return "";
         }
-        String[] paragraphs = jobDescription.split("\\n{2,}");
-        StringBuilder kept = new StringBuilder();
-        for (String paragraph : paragraphs) {
-            if (isBoilerplate(paragraph)) {
-                continue;
-            }
-            if (!kept.isEmpty()) {
-                kept.append("\n\n");
-            }
-            kept.append(paragraph.strip());
-        }
-        return kept.isEmpty() ? jobDescription.strip() : kept.toString();
-    }
-
-    private static boolean isBoilerplate(String paragraph) {
-        for (Pattern pattern : BOILERPLATE_PARAGRAPH_PATTERNS) {
-            if (pattern.matcher(paragraph).find()) {
-                return true;
-            }
-        }
-        return false;
+        String kept = Arrays.stream(jobDescription.split("\\n{2,}"))
+                .filter(p -> BOILERPLATE_PARAGRAPH_PATTERNS.stream().noneMatch(pattern -> pattern.matcher(p).find()))
+                .map(String::strip)
+                .collect(Collectors.joining("\n\n"));
+        return kept.isEmpty() ? jobDescription.strip() : kept;
     }
 
     private JdTextCleaner() {

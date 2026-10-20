@@ -63,7 +63,7 @@ function KeywordList({
   saveDisabledReason?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 motion-safe:animate-fade-up">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-white/80">{title}</h3>
         <SaveToNotesButton
@@ -75,14 +75,22 @@ function KeywordList({
         <p className="text-sm text-slate-400 dark:text-white/40">{emptyLabel}</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
-          {keywords.map((kw) => (
-            <li key={kw.name} className="flex items-center gap-2">
+          {keywords.map((kw, i) => (
+            // Rows cascade in like Recharts bars; the delay is capped so long lists don't drag.
+            <li
+              key={kw.name}
+              className="flex items-center gap-2 motion-safe:animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 10) * 60}ms` }}
+            >
               <Icon className={cn('h-3.5 w-3.5 shrink-0', iconClassName)} />
               <span className="w-44 shrink-0 truncate text-sm text-slate-700 dark:text-white/80" title={kw.name}>
                 {kw.name}
               </span>
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
-                <div className="h-full rounded-full bg-sky-400" style={{ width: `${kw.weight}%` }} />
+                <div
+                  className="h-full rounded-full bg-sky-400 motion-safe:animate-bar-grow"
+                  style={{ width: `${kw.weight}%`, animationDelay: `${Math.min(i, 10) * 60}ms` }}
+                />
               </div>
               <span className="w-9 shrink-0 text-right text-xs text-slate-400 tabular-nums dark:text-white/40">
                 {kw.weight}%
@@ -161,7 +169,7 @@ export function ResumeMatchResultsPage() {
         </Button>
       </div>
 
-      <div className="relative pb-8 sm:min-h-[190px] sm:pr-52">
+      <div className="relative pb-8 motion-safe:animate-fade-up sm:min-h-[190px] sm:pr-52">
         <h1 className="text-center text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           Match Results
         </h1>

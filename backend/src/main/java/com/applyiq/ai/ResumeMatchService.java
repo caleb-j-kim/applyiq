@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Orchestrates one match analysis: run the free Java extraction pass first,
@@ -132,20 +133,15 @@ public class ResumeMatchService {
 
         List<ScoredKeyword> jdKeywords = skillExtractionService.extract(jobDescription);
         List<ScoredKeyword> resumeKeywords = skillExtractionService.extract(resume.getParsedText());
-        List<ScoredKeyword> foundInResume = skillExtractionService.intersect(jdKeywords, resumeKeywords);
-        List<ScoredKeyword> missed = skillExtractionService.difference(jdKeywords, resumeKeywords);
+        Map<Boolean, List<ScoredKeyword>> explicit = skillExtractionService.splitByPresence(jdKeywords, resumeKeywords);
+        List<ScoredKeyword> foundInResume = explicit.get(true);
 
         ClaudeClient.AnalysisResult aiResult = claudeClient.analyzeMatch(
                 jobDescription, jdKeywords, resumeKeywords, includeBulletSuggestions);
 
-        List<ScoredKeyword> predictedFound = aiResult.predictedKeywords().stream()
-                .filter(ClaudeClient.PredictedKeyword::foundInResume)
-                .map(k -> new ScoredKeyword(k.name(), k.weight()))
-                .toList();
-        List<ScoredKeyword> predictedMissed = aiResult.predictedKeywords().stream()
-                .filter(k -> !k.foundInResume())
-                .map(k -> new ScoredKeyword(k.name(), k.weight()))
-                .toList();
+        Map<Boolean, List<ScoredKeyword>> predicted = aiResult.predictedKeywords().stream()
+                .collect(Collectors.partitioningBy(ClaudeClient.PredictedKeyword::foundInResume,
+                        Collectors.mapping(k -> new ScoredKeyword(k.name(), k.weight()), Collectors.toList())));
 
         int matchScore = jdKeywords.isEmpty() ? 0 : Math.round(100f * foundInResume.size() / jdKeywords.size());
 
@@ -158,9 +154,9 @@ public class ResumeMatchService {
                 .build();
         analysis.setJobDescriptionKeywords(jdKeywords);
         analysis.setFoundKeywords(foundInResume);
-        analysis.setMissingKeywords(missed);
-        analysis.setPredictedFoundKeywords(predictedFound);
-        analysis.setPredictedMissingKeywords(predictedMissed);
+        analysis.setMissingKeywords(explicit.get(false));
+        analysis.setPredictedFoundKeywords(predicted.get(true));
+        analysis.setPredictedMissingKeywords(predicted.get(false));
         analysis.setSuggestedResumeBullets(aiResult.suggestedResumeBullets());
         return analysis;
     }

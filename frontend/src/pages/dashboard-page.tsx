@@ -40,18 +40,9 @@ import {
 } from '@/lib/mappers';
 import { CATEGORICAL, CHART_INK, CHART_INK_LIGHT, CHART_SURFACE, STATUS_COLORS } from '@/lib/chart-colors';
 import { useTheme } from '@/context/theme-context';
-import type { ApplicationStatus } from '@/types';
+import { APPLICATION_STATUSES } from '@/types';
 
-const PIPELINE_STATUSES: ApplicationStatus[] = [
-  'Saved',
-  'Applied',
-  'Online Assessment',
-  'Interviewing',
-  'Final Round',
-  'Offer',
-  'Rejected',
-  'Ghosted',
-];
+const PIPELINE_STATUSES = APPLICATION_STATUSES.filter((s) => s !== 'Withdrawn');
 
 interface TopMatchDto {
   applicationId: string;
@@ -150,7 +141,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Status breakdown</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">Applications by current pipeline stage</p>
@@ -183,7 +174,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Weekly application activity</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">Applications submitted per week</p>
@@ -215,7 +206,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur lg:col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Recent applications</h2>
             <Link to="/applications" className="text-xs font-medium text-sky-400 hover:underline">
@@ -245,7 +236,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card className="flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between">
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Highest match jobs</h2>
             <Link to="/resume-match" className="text-xs font-medium text-sky-400 hover:underline">
@@ -282,7 +273,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card className="flex flex-col">
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Upcoming follow-ups</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">Applications ApplyIQ recommends acting on this week</p>
@@ -292,7 +283,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card className="flex flex-col">
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Applications needing attention</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">Highest ghosting risk right now</p>

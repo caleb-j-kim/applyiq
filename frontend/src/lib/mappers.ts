@@ -1,44 +1,30 @@
-import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel, Resume, ScoredKeyword } from '@/types';
+import {
+  APPLICATION_STATUSES,
+  INTERVIEW_STAGES,
+  PRIORITY_LEVELS,
+  type ApplicationStatus,
+  type InterviewStage,
+  type JobApplication,
+  type PriorityLevel,
+  type Resume,
+  type ScoredKeyword,
+} from '@/types';
 
-export const STATUS_TO_API: Record<ApplicationStatus, string> = {
-  Saved: 'SAVED',
-  Applied: 'APPLIED',
-  'Online Assessment': 'ONLINE_ASSESSMENT',
-  Interviewing: 'INTERVIEWING',
-  'Final Round': 'FINAL_ROUND',
-  Offer: 'OFFER',
-  Rejected: 'REJECTED',
-  Ghosted: 'GHOSTED',
-  Withdrawn: 'WITHDRAWN',
-};
+// Backend enums are the UI labels upper-snake-cased ('Online Assessment' <-> 'ONLINE_ASSESSMENT').
+function enumMaps<T extends string>(labels: readonly T[]) {
+  const toApi = (label: string) => label.toUpperCase().replaceAll(' ', '_');
+  return {
+    toApi: Object.fromEntries(labels.map((l) => [l, toApi(l)])) as Record<T, string>,
+    fromApi: Object.fromEntries(labels.map((l) => [toApi(l), l])) as Record<string, T>,
+  };
+}
 
-export const API_TO_STATUS: Record<string, ApplicationStatus> = Object.fromEntries(
-  Object.entries(STATUS_TO_API).map(([literal, api]) => [api, literal as ApplicationStatus])
-);
+const statusMaps = enumMaps(APPLICATION_STATUSES);
+const stageMaps = enumMaps(INTERVIEW_STAGES);
+const priorityMaps = enumMaps(PRIORITY_LEVELS);
 
-export const INTERVIEW_STAGE_TO_API: Record<InterviewStage, string> = {
-  'Phone Screening': 'PHONE_SCREENING',
-  'First Round': 'FIRST_ROUND',
-  'Second Round': 'SECOND_ROUND',
-  'Third Round': 'THIRD_ROUND',
-  'Fourth Round': 'FOURTH_ROUND',
-  'Fifth Round': 'FIFTH_ROUND',
-  'Final Round': 'FINAL_ROUND',
-};
-
-export const API_TO_INTERVIEW_STAGE: Record<string, InterviewStage> = Object.fromEntries(
-  Object.entries(INTERVIEW_STAGE_TO_API).map(([literal, api]) => [api, literal as InterviewStage])
-);
-
-export const PRIORITY_TO_API: Record<PriorityLevel, string> = {
-  Low: 'LOW',
-  Medium: 'MEDIUM',
-  High: 'HIGH',
-};
-
-export const API_TO_PRIORITY: Record<string, PriorityLevel> = Object.fromEntries(
-  Object.entries(PRIORITY_TO_API).map(([literal, api]) => [api, literal as PriorityLevel])
-);
+export const STATUS_TO_API = statusMaps.toApi;
+export const API_TO_STATUS = statusMaps.fromApi;
 
 export interface JobApplicationResponseDto {
   id: string;
@@ -86,14 +72,13 @@ export function mapApplicationResponse(dto: JobApplicationResponseDto): JobAppli
     referralNotes: dto.referralNotes ?? undefined,
     recruiterName: dto.recruiterName ?? undefined,
     recruiterEmail: dto.recruiterEmail ?? undefined,
-    priorityLevel: dto.priorityLevel ? (API_TO_PRIORITY[dto.priorityLevel] ?? 'Medium') : 'Medium',
+    priorityLevel: dto.priorityLevel ? (priorityMaps.fromApi[dto.priorityLevel] ?? 'Medium') : 'Medium',
     jobDescription: dto.jobDescription ?? undefined,
     notes: dto.notes ?? undefined,
     followUpCount: dto.followUpCount,
-    matchScore: undefined,
     interviewRoundsTotal: dto.interviewRoundsTotal ?? undefined,
     interviewRoundsCompleted: dto.interviewRoundsCompleted ?? undefined,
-    interviewStage: dto.interviewStage ? API_TO_INTERVIEW_STAGE[dto.interviewStage] : undefined,
+    interviewStage: dto.interviewStage ? stageMaps.fromApi[dto.interviewStage] : undefined,
   };
 }
 
@@ -129,13 +114,13 @@ export function mapApplicationToRequest(form: ApplicationFormValues) {
     hasReferral: form.hasReferral,
     referralName: form.hasReferral ? form.referralName || null : null,
     referralContactInfo: form.hasReferral ? form.referralContactInfo || null : null,
-    priorityLevel: PRIORITY_TO_API[form.priorityLevel],
+    priorityLevel: priorityMaps.toApi[form.priorityLevel],
     jobDescription: form.jobDescription || null,
     notes: form.notes || null,
     interviewRoundsTotal: isInterviewing && form.interviewRoundsTotal !== '' ? Number(form.interviewRoundsTotal) : null,
     interviewRoundsCompleted:
       isInterviewing && form.interviewRoundsCompleted !== '' ? Number(form.interviewRoundsCompleted) : null,
-    interviewStage: isInterviewing && form.interviewStage ? INTERVIEW_STAGE_TO_API[form.interviewStage] : null,
+    interviewStage: isInterviewing && form.interviewStage ? stageMaps.toApi[form.interviewStage] : null,
   };
 }
 

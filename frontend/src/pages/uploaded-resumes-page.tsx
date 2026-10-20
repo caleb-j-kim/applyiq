@@ -138,13 +138,13 @@ export function UploadedResumesPage() {
 
       <div className="flex flex-col gap-3">
         {isLoading && (
-          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card>
             <CardContent className="py-12 text-center text-sm text-slate-400 dark:text-white/40">Loading resumes...</CardContent>
           </Card>
         )}
         {!isLoading &&
           resumes.map((resume) => (
-            <Card key={resume.id} className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+            <Card key={resume.id} >
               <CardContent className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400">
@@ -212,7 +212,7 @@ export function UploadedResumesPage() {
             </Card>
           ))}
         {!isLoading && resumes.length === 0 && (
-          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card>
             <CardContent className="py-12 text-center text-sm text-slate-400 dark:text-white/40">
               No resumes uploaded yet.
             </CardContent>

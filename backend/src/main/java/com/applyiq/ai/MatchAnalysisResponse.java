@@ -4,12 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Mirrors the frontend's MatchAnalysisResult shape (frontend/src/lib/mock-match-analysis.ts)
- * plus the fields only a real backend can provide (rationale, bullets, persistence id) —
- * deliberately kept close so swapping the frontend's mock call for a real fetch is close to
- * a drop-in field rename, not a redesign.
- */
+/** One match analysis as returned to the frontend (MatchAnalysisResponseDto in frontend/src/lib/mappers.ts). */
 public record MatchAnalysisResponse(
         UUID id,
         UUID resumeId,

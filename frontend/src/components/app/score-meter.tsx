@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { AlertTriangle, CheckCircle2, OctagonAlert, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -52,7 +53,8 @@ export function ScoreMeter({
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+            className="motion-safe:animate-ring-sweep"
+            style={{ '--ring-from': circumference } as CSSProperties}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">

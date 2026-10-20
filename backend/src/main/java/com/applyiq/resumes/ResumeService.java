@@ -68,8 +68,7 @@ public class ResumeService {
         return resumeRepository.save(resume);
     }
 
-    public byte[] download(UUID userId, UUID resumeId) {
-        Resume resume = getOwned(userId, resumeId);
+    public byte[] download(Resume resume) {
         return resumeStorageService.download(resume.getStorageKey());
     }
 
@@ -82,10 +81,7 @@ public class ResumeService {
      * time (e.g. re-exporting a scanned PDF with a real text layer).
      */
     public Resume extractText(UUID userId, UUID resumeId) {
-        Resume resume = getOwned(userId, resumeId);
-        byte[] content = resumeStorageService.download(resume.getStorageKey());
-        resume.setParsedText(resumeTextExtractor.extract(content, resume.getContentType()));
-        return resumeRepository.save(resume);
+        return reextract(getOwned(userId, resumeId));
     }
 
     /**
@@ -95,11 +91,12 @@ public class ResumeService {
      * self-heals for any resume missing text instead of just failing outright.
      */
     public Resume ensureParsedText(Resume resume) {
-        if (resume.getParsedText() != null && !resume.getParsedText().isBlank()) {
-            return resume;
-        }
-        byte[] content = resumeStorageService.download(resume.getStorageKey());
-        resume.setParsedText(resumeTextExtractor.extract(content, resume.getContentType()));
+        boolean hasText = resume.getParsedText() != null && !resume.getParsedText().isBlank();
+        return hasText ? resume : reextract(resume);
+    }
+
+    private Resume reextract(Resume resume) {
+        resume.setParsedText(resumeTextExtractor.extract(download(resume), resume.getContentType()));
         return resumeRepository.save(resume);
     }
 

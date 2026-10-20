@@ -67,7 +67,7 @@ export function SettingsPage() {
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="flex w-full max-w-2xl flex-col gap-6">
-          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card>
             <CardHeader>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Appearance</h2>
             </CardHeader>
@@ -95,7 +95,7 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card>
             <CardHeader>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Notifications</h2>
             </CardHeader>
@@ -118,7 +118,7 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-rose-500/20 bg-rose-500/[0.03] backdrop-blur">
+          <Card className="bg-rose-500/[0.03] dark:bg-rose-500/[0.03]">
             <CardHeader>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Danger zone</h2>
               <p className="text-sm text-slate-500 dark:text-white/50">Permanently delete your account and all tracked applications.</p>
@@ -132,7 +132,7 @@ export function SettingsPage() {
           </Card>
         </div>
 
-        <Card className="flex-1 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+        <Card className="flex-1">
           <CardHeader>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Follow-Ups</h2>
