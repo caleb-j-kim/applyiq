@@ -3,7 +3,20 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+/* Screen-only so printing (Download PDF) always renders the light palette. */
+@custom-variant dark {
+    @media screen {
+        &:is(.dark *) {
+            @slot;
+        }
+    }
+}
+
+@media print {
+    [data-sonner-toaster] {
+        display: none;
+    }
+}
 
 @theme inline {
     --font-heading: var(--font-sans);

@@ -45,4 +45,10 @@ public class AiController {
         MatchAnalysisResponse response = resumeMatchService.preview(principal.getUser().getId(), request);
         return ApiResponse.success(response);
     }
+
+    /** Score distribution and most-missed skills across the user's saved analyses. No AI call. */
+    @GetMapping("/match-analytics")
+    public ApiResponse<MatchAnalyticsResponse> matchAnalytics(@AuthenticationPrincipal UserPrincipal principal) {
+        return ApiResponse.success(resumeMatchService.getAnalytics(principal.getUser().getId()));
+    }
 }

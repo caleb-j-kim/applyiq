@@ -53,6 +53,14 @@ const PIPELINE_STATUSES: ApplicationStatus[] = [
   'Ghosted',
 ];
 
+interface TopMatchDto {
+  applicationId: string;
+  companyName: string;
+  jobTitle: string;
+  status: string;
+  matchScore: number;
+}
+
 function ComingSoon({ label }: { label: string }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-slate-400 dark:text-white/40">
@@ -68,13 +76,18 @@ export function DashboardPage() {
   const ink = theme === 'dark' ? CHART_INK : CHART_INK_LIGHT;
   const surface = CHART_SURFACE[theme];
   const [dashboard, setDashboard] = useState<DashboardResponseDto | null>(null);
+  const [topMatches, setTopMatches] = useState<TopMatchDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiFetch<DashboardResponseDto>('/dashboard');
+        const [data, matchData] = await Promise.all([
+          apiFetch<DashboardResponseDto>('/dashboard'),
+          apiFetch<{ topMatches: TopMatchDto[] }>('/ai/match-analytics'),
+        ]);
         setDashboard(data);
+        setTopMatches(matchData.topMatches);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to load dashboard');
       } finally {
@@ -233,11 +246,37 @@ export function DashboardPage() {
         </Card>
 
         <Card className="flex flex-col border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Highest match jobs</h2>
+            <Link to="/resume-match" className="text-xs font-medium text-sky-400 hover:underline">
+              Run a match
+            </Link>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col">
-            <ComingSoon label="Resume match scoring" />
+          <CardContent className="flex flex-1 flex-col gap-1">
+            {topMatches.map((match) => (
+              <div key={match.applicationId} className="flex flex-col gap-1.5 rounded-lg px-2 py-2.5 hover:bg-slate-100 dark:hover:bg-white/[0.04]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-slate-900 dark:text-white">{match.jobTitle}</div>
+                    <div className="truncate text-xs text-slate-400 dark:text-white/40">{match.companyName}</div>
+                  </div>
+                  <StatusBadge status={API_TO_STATUS[match.status] ?? 'Saved'} className="shrink-0" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+                    <div className="h-full rounded-full bg-sky-400" style={{ width: `${match.matchScore}%` }} />
+                  </div>
+                  <span className="w-9 shrink-0 text-right text-xs text-slate-500 tabular-nums dark:text-white/60">
+                    {match.matchScore}%
+                  </span>
+                </div>
+              </div>
+            ))}
+            {topMatches.length === 0 && (
+              <div className="flex flex-1 items-center justify-center py-8 text-center text-sm text-slate-400 dark:text-white/40">
+                No match scores yet — run Resume Match on a saved application.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -63,7 +63,7 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'fixed inset-x-0 top-0 z-50 transition-colors duration-300',
+        'fixed inset-x-0 top-0 z-50 transition-colors duration-300 print:hidden',
         scrolled || open || isAppSection
           ? 'border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-lg'
           : 'border-b border-transparent bg-transparent'

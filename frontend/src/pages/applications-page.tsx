@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -375,23 +376,11 @@ export function ApplicationsPage() {
                   <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
-                      <Input
-                        id="interviewRoundsTotal"
-                        type="number"
-                        min={0}
-                        value={form.interviewRoundsTotal}
-                        onChange={(e) => setForm((f) => ({ ...f, interviewRoundsTotal: e.target.value }))}
-                      />
+                      <NumberInput id="interviewRoundsTotal" value={form.interviewRoundsTotal} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsTotal: v }))} />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
-                      <Input
-                        id="interviewRoundsCompleted"
-                        type="number"
-                        min={0}
-                        value={form.interviewRoundsCompleted}
-                        onChange={(e) => setForm((f) => ({ ...f, interviewRoundsCompleted: e.target.value }))}
-                      />
+                      <NumberInput id="interviewRoundsCompleted" value={form.interviewRoundsCompleted} max={Number(form.interviewRoundsTotal) || undefined} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsCompleted: v }))} />
                     </div>
                     <div className="col-span-2 flex flex-col gap-1.5">
                       <Label>Current interview stage</Label>
@@ -476,7 +465,7 @@ export function ApplicationsPage() {
         </TabsList>
 
         <TabsContent value="table">
-          <Card className="w-[125%] -ml-[12.5%] border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
+          <Card className="relative left-1/2 w-[min(calc(100vw-4rem),128rem)] -translate-x-1/2 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
             <CardContent className="overflow-x-auto px-0">
               <Table>
                 <TableHeader>

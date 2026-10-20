@@ -10,11 +10,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -23,10 +25,48 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-        return ResponseEntity.badRequest().body(ApiResponse.error(message));
+        return ResponseEntity.badRequest().body(ApiResponse.error(humanize(ex.getBindingResult().getFieldErrors())));
+    }
+
+    /**
+     * Turns raw bean-validation output ("jobTitle: must not be blank, companyName: must not be blank")
+     * into one readable sentence per problem ("Please fill in the company name and job title.").
+     */
+    static String humanize(List<FieldError> errors) {
+        List<String> missing = new ArrayList<>();
+        List<String> other = new ArrayList<>();
+        for (FieldError error : errors) {
+            String label = label(error.getField());
+            String code = error.getCode() == null ? "" : error.getCode();
+            switch (code) {
+                case "NotBlank", "NotNull", "NotEmpty" -> missing.add(label);
+                case "Email" -> other.add("Please enter a valid " + label + ".");
+                default -> {
+                    String detail = error.getDefaultMessage() == null ? "is invalid" : error.getDefaultMessage();
+                    // Some constraints already name the field in their message ("password must be ...").
+                    String sentence = detail.toLowerCase().startsWith(label) ? detail : label + " " + detail;
+                    other.add(Character.toUpperCase(sentence.charAt(0)) + sentence.substring(1) + ".");
+                }
+            }
+        }
+        List<String> sentences = new ArrayList<>();
+        if (!missing.isEmpty()) {
+            sentences.add("Please fill in the " + joinWithAnd(missing.stream().distinct().sorted().toList()) + ".");
+        }
+        other.stream().distinct().forEach(sentences::add);
+        return String.join(" ", sentences);
+    }
+
+    // "recruiterEmail" -> "recruiter email"
+    private static String label(String field) {
+        return field.replaceAll("([a-z0-9])([A-Z])", "$1 $2").toLowerCase();
+    }
+
+    private static String joinWithAnd(List<String> items) {
+        if (items.size() <= 2) {
+            return String.join(" and ", items);
+        }
+        return String.join(", ", items.subList(0, items.size() - 1)) + ", and " + items.getLast();
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)

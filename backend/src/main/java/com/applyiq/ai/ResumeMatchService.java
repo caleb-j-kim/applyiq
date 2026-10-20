@@ -10,8 +10,15 @@ import com.applyiq.users.User;
 import com.applyiq.users.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -59,6 +66,54 @@ public class ResumeMatchService {
                 .findFirstByJobApplication_IdAndUser_IdOrderByCreatedAtDesc(applicationId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("No match analysis yet for this application"));
         return MatchAnalysisResponse.from(analysis);
+    }
+
+    /**
+     * Only the latest analysis per tracked application counts, so re-running a match doesn't
+     * skew the charts. Preview analyses have no application to dedupe on and each count once.
+     */
+    @Transactional(readOnly = true)
+    public MatchAnalyticsResponse getAnalytics(UUID userId) {
+        Set<UUID> seenApplications = new HashSet<>();
+        List<ResumeMatchAnalysis> counted = new ArrayList<>();
+        for (ResumeMatchAnalysis analysis : repository.findByUser_IdOrderByCreatedAtDesc(userId)) {
+            JobApplication application = analysis.getJobApplication();
+            if (application == null || seenApplications.add(application.getId())) {
+                counted.add(analysis);
+            }
+        }
+
+        int[] buckets = new int[10];
+        Map<String, Long> missingCounts = new LinkedHashMap<>();
+        for (ResumeMatchAnalysis analysis : counted) {
+            buckets[Math.min(9, Math.max(0, analysis.getMatchScore()) / 10)]++;
+            for (ScoredKeyword keyword : analysis.getMissingKeywords()) {
+                missingCounts.merge(keyword.name(), 1L, Long::sum);
+            }
+        }
+
+        List<MatchAnalyticsResponse.ScoreBucket> distribution = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            distribution.add(new MatchAnalyticsResponse.ScoreBucket(i * 10 + "-" + (i == 9 ? 100 : i * 10 + 9), buckets[i]));
+        }
+        List<MatchAnalyticsResponse.SkillCount> topMissing = missingCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .limit(10)
+                .map(e -> new MatchAnalyticsResponse.SkillCount(e.getKey(), e.getValue()))
+                .toList();
+
+        List<MatchAnalyticsResponse.TopMatch> topMatches = counted.stream()
+                .filter(analysis -> analysis.getJobApplication() != null)
+                .sorted(Comparator.comparingInt(ResumeMatchAnalysis::getMatchScore).reversed())
+                .limit(5)
+                .map(analysis -> {
+                    JobApplication application = analysis.getJobApplication();
+                    return new MatchAnalyticsResponse.TopMatch(application.getId(), application.getCompanyName(),
+                            application.getJobTitle(), application.getStatus(), analysis.getMatchScore());
+                })
+                .toList();
+
+        return new MatchAnalyticsResponse(counted.size(), distribution, topMissing, topMatches);
     }
 
     private ResumeMatchAnalysis runAnalysis(UUID userId, Resume resume, String jobDescription,

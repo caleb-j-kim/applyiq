@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -45,7 +46,7 @@ import {
   type ResumeResponseDto,
 } from '@/lib/mappers';
 import { cn } from '@/lib/utils';
-import type { ResumeMatchResultsState } from '@/pages/resume-match-results-page';
+import { loadResumeMatchResults, saveResumeMatchResults, type ResumeMatchResultsState } from '@/lib/resume-match-results';
 import type { ApplicationStatus, InterviewStage, JobApplication, PriorityLevel, Resume } from '@/types';
 
 type Mode = 'manual' | 'existing';
@@ -146,6 +147,13 @@ function ModeOption({
 export function ResumeMatchPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('manual');
+
+  // A previous result is kept until "Back to Resume Match" or logout — show it
+  // instead of the form so the user doesn't have to re-run the analysis.
+  useEffect(() => {
+    const saved = loadResumeMatchResults();
+    if (saved) navigate('/resume-match/results', { replace: true, state: saved });
+  }, [navigate]);
 
   // Resume section — shared by both modes.
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -290,7 +298,8 @@ export function ResumeMatchPage() {
               includeBulletSuggestions: true,
             }),
           });
-      const state: ResumeMatchResultsState = { analysis, resumeName, subject };
+      const state: ResumeMatchResultsState = { analysis, resumeName, subject, applicationId };
+      saveResumeMatchResults(state);
       navigate('/resume-match/results', { state });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Match analysis failed');
@@ -318,7 +327,8 @@ export function ResumeMatchPage() {
         `/ai/applications/${selectedApplicationId}/match-score`,
         { method: 'POST', body: JSON.stringify({ resumeId: selectedResumeId, includeBulletSuggestions: true }) }
       );
-      const state: ResumeMatchResultsState = { analysis, resumeName, subject };
+      const state: ResumeMatchResultsState = { analysis, resumeName, subject, applicationId: selectedApplicationId };
+      saveResumeMatchResults(state);
       navigate('/resume-match/results', { state });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Match analysis failed');
@@ -525,23 +535,11 @@ export function ResumeMatchPage() {
             <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
-                <Input
-                  id="interviewRoundsTotal"
-                  type="number"
-                  min={0}
-                  value={form.interviewRoundsTotal}
-                  onChange={(e) => setForm((f) => ({ ...f, interviewRoundsTotal: e.target.value }))}
-                />
+                <NumberInput id="interviewRoundsTotal" value={form.interviewRoundsTotal} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsTotal: v }))} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
-                <Input
-                  id="interviewRoundsCompleted"
-                  type="number"
-                  min={0}
-                  value={form.interviewRoundsCompleted}
-                  onChange={(e) => setForm((f) => ({ ...f, interviewRoundsCompleted: e.target.value }))}
-                />
+                <NumberInput id="interviewRoundsCompleted" value={form.interviewRoundsCompleted} max={Number(form.interviewRoundsTotal) || undefined} onValueChange={(v) => setForm((f) => ({ ...f, interviewRoundsCompleted: v }))} />
               </div>
               <div className="col-span-1 flex flex-col gap-1.5 sm:col-span-2">
                 <Label>Current interview stage</Label>

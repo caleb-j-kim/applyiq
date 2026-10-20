@@ -14,7 +14,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/app/page-header';
@@ -61,12 +60,16 @@ function renderPieLabel(secondaryInk: string) {
   };
 }
 
-function ComingSoon({ label }: { label: string }) {
+interface MatchAnalyticsDto {
+  analysesCounted: number;
+  scoreDistribution: { range: string; count: number }[];
+  topMissingSkills: { skill: string; count: number }[];
+}
+
+function NoMatchData() {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-slate-400 dark:text-white/40">
-      <Sparkles className="h-5 w-5 text-sky-400/60" />
-      <p className="text-sm">{label}</p>
-      <p className="text-xs">AI backend not built yet — coming soon.</p>
+    <div className="py-16 text-center text-sm text-slate-400 dark:text-white/40">
+      No resume match analyses yet — run one on the Resume Match page.
     </div>
   );
 }
@@ -83,17 +86,20 @@ export function AnalyticsPage() {
   };
   const [dashboard, setDashboard] = useState<DashboardResponseDto | null>(null);
   const [applications, setApplications] = useState<JobApplicationResponseDto[]>([]);
+  const [matchAnalytics, setMatchAnalytics] = useState<MatchAnalyticsDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [dashboardData, applicationsData] = await Promise.all([
+        const [dashboardData, applicationsData, matchData] = await Promise.all([
           apiFetch<DashboardResponseDto>('/dashboard'),
           apiFetch<JobApplicationResponseDto[]>('/applications'),
+          apiFetch<MatchAnalyticsDto>('/ai/match-analytics'),
         ]);
         setDashboard(dashboardData);
         setApplications(applicationsData);
+        setMatchAnalytics(matchData);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to load analytics');
       } finally {
@@ -199,18 +205,76 @@ export function AnalyticsPage() {
         <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Resume match score distribution</h2>
+            <p className="text-sm text-slate-500 dark:text-white/50">
+              Number of analyses in each score range (latest per application)
+            </p>
           </CardHeader>
           <CardContent>
-            <ComingSoon label="Resume match scoring" />
+            {!matchAnalytics?.analysesCounted ? (
+              <NoMatchData />
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={matchAnalytics.scoreDistribution} margin={{ left: -16, right: 16 }} barCategoryGap={2}>
+                  <CartesianGrid vertical={false} stroke={ink.grid} />
+                  <XAxis
+                    dataKey="range"
+                    tick={{ fill: ink.muted, fontSize: 11 }}
+                    axisLine={{ stroke: ink.axis }}
+                    tickLine={false}
+                    interval={0}
+                  />
+                  <YAxis allowDecimals={false} tick={{ fill: ink.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    cursor={{ fill: 'rgba(148,163,184,0.12)' }}
+                    labelFormatter={(range) => `Score ${range}%`}
+                    formatter={(value) => [value, 'Analyses']}
+                  />
+                  <Bar dataKey="count" name="Analyses" fill={CATEGORICAL[0]} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] backdrop-blur">
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-900 dark:text-white">Most common missing skills</h2>
+            <p className="text-sm text-slate-500 dark:text-white/50">
+              Job-description keywords missing from your resume, by number of analyses
+            </p>
           </CardHeader>
           <CardContent>
-            <ComingSoon label="Resume match scoring" />
+            {!matchAnalytics?.topMissingSkills.length ? (
+              <NoMatchData />
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={matchAnalytics.topMissingSkills} layout="vertical" margin={{ left: 8, right: 24 }}>
+                  <CartesianGrid horizontal={false} stroke={ink.grid} />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    tick={{ fill: ink.muted, fontSize: 12 }}
+                    axisLine={{ stroke: ink.axis }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="skill"
+                    width={130}
+                    tick={{ fill: ink.secondary, fontSize: 12 }}
+                    axisLine={{ stroke: ink.axis }}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    cursor={{ fill: 'rgba(148,163,184,0.12)' }}
+                    formatter={(value) => [value, 'Analyses missing it']}
+                  />
+                  <Bar dataKey="count" name="Analyses missing it" fill={CATEGORICAL[0]} radius={[0, 4, 4, 0]} maxBarSize={22} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 

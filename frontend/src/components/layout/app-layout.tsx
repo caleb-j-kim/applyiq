@@ -41,9 +41,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className={cn('min-h-svh', theme === 'dark' ? 'dark bg-black' : 'bg-white')}>
+    <div className={cn('min-h-svh', theme === 'dark' ? 'dark bg-black' : 'bg-white', 'print:bg-white')}>
       <Navbar />
-      <main className="mx-auto max-w-7xl px-6 pt-24 pb-16">{children}</main>
+      <main className="mx-auto max-w-7xl px-6 pt-24 pb-16 print:pt-0">{children}</main>
     </div>
   );
 }
