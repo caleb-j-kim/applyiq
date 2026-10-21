@@ -50,6 +50,8 @@ function toFormValues(app: JobApplication): ApplicationFormValues {
     hasReferral: app.hasReferral,
     referralName: app.referralName ?? '',
     referralContactInfo: app.referralContactInfo ?? '',
+    recruiterName: app.recruiterName ?? '',
+    recruiterEmail: app.recruiterEmail ?? '',
     jobDescription: app.jobDescription ?? '',
     notes: app.notes ?? '',
     interviewRoundsTotal: app.interviewRoundsTotal?.toString() ?? '',

@@ -8,10 +8,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class AiController {
 
     private final ResumeMatchService resumeMatchService;
+    private final InterviewPrepService interviewPrepService;
 
     /** Analyze a tracked application's job description against a resume; persists the result. */
     @PostMapping("/applications/{id}/match-score")
@@ -50,5 +53,33 @@ public class AiController {
     @GetMapping("/match-analytics")
     public ApiResponse<MatchAnalyticsResponse> matchAnalytics(@AuthenticationPrincipal UserPrincipal principal) {
         return ApiResponse.success(resumeMatchService.getAnalytics(principal.getUser().getId()));
+    }
+
+    /** Generate interview prep for a tracked application. Not saved until the user saves it below. */
+    @PostMapping("/applications/{id}/interview-prep")
+    public ApiResponse<InterviewPrepResponse> generateInterviewPrep(@AuthenticationPrincipal UserPrincipal principal,
+                                                                     @PathVariable UUID id,
+                                                                     @Valid @RequestBody InterviewPrepRequest request) {
+        return ApiResponse.success(interviewPrepService.generate(principal.getUser().getId(), id, request));
+    }
+
+    @PostMapping("/interview-preps")
+    public ApiResponse<InterviewPrepResponse> saveInterviewPrep(@AuthenticationPrincipal UserPrincipal principal,
+                                                                 @Valid @RequestBody InterviewPrepResponse prep) {
+        return ApiResponse.success(interviewPrepService.save(principal.getUser().getId(), prep));
+    }
+
+    /** Save the user's edits to a saved prep's sections. No AI call. */
+    @PutMapping("/interview-preps/{id}")
+    public ApiResponse<InterviewPrepResponse> updateInterviewPrep(@AuthenticationPrincipal UserPrincipal principal,
+                                                                   @PathVariable UUID id,
+                                                                   @Valid @RequestBody InterviewPrepResponse prep) {
+        return ApiResponse.success(interviewPrepService.update(principal.getUser().getId(), id, prep));
+    }
+
+    /** Every saved prep, newest first. No AI call. */
+    @GetMapping("/interview-preps")
+    public ApiResponse<List<InterviewPrepResponse>> interviewPreps(@AuthenticationPrincipal UserPrincipal principal) {
+        return ApiResponse.success(interviewPrepService.list(principal.getUser().getId()));
     }
 }

@@ -13,6 +13,7 @@ import {
 import { Navbar } from '@/components/layout/navbar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/app/status-badge';
+import { EFFORT_DESCRIPTIONS, PREP_EFFORTS } from '@/lib/mappers';
 import type { ApplicationStatus } from '@/types';
 
 interface FeatureDetail {
@@ -88,21 +89,29 @@ const AI_FEATURES: FeatureDetail[] = [
     title: 'Resume Match Score',
     summary: 'Know how well your resume fits a role before you spend time applying.',
     points: [
-      'Paste in any job description and ApplyIQ compares it against your active resume.',
-      'Get back a numeric match score plus the skills you already have that match the role.',
-      'See the skills the posting asks for that your resume is missing.',
-      'Surfaces experience gaps worth addressing before you apply or interview.',
-      'Suggests specific resume bullet points tailored to the role, so you can tighten your resume before submitting.',
+      "Paste in a job description, or pick an application you've already saved, and choose which uploaded resume to score against.",
+      'Pasted descriptions can be saved as a new application in one click, so the result stays linked to it.',
+      'Get a 0-100 match score with a one-line rationale explaining what drove it.',
+      "Every keyword from the posting is ranked by an importance weight (1-100) for that specific role, split into keywords found in your resume and keywords you're missing.",
+      'Predicted keywords: skills the posting implies but never states outright, and whether your resume already covers them.',
+      'Suggested resume bullets tailored to the role, so you can tighten your resume before submitting.',
+      "Save any list straight to the application's notes, or download the full results as a PDF.",
+      "Keeps running if you switch pages: the results are waiting when you come back, and you get a notification when they're ready.",
     ],
   },
   {
     icon: MessagesSquare,
     title: 'Interview Prep',
-    summary: 'Walk into every interview knowing what to expect.',
+    summary: 'Walk into every interview with a study guide built from the job posting and your own resume.',
     points: [
-      'Generates a tailored set of likely technical and behavioral questions based on the specific role and your resume.',
-      'Provides key talking points worth bringing up in the interview.',
-      'Lists the skills worth reviewing beforehand, so your prep time goes to what actually matters for that interview.',
+      "Pick an application and a resume; ApplyIQ maps each qualification to your real experience, flags gaps honestly, and gives you ready-to-say answers. It never invents experience you don't have.",
+      "Add who you're meeting with, and the prep covers what to know about your interviewer.",
+      'Not marked "Interviewing" yet? ApplyIQ offers to update the status and log your rounds and current stage before generating.',
+      'Choose an effort level, which sets how much you get back:',
+      ...PREP_EFFORTS.map((level) => `${level} effort: ${EFFORT_DESCRIPTIONS[level]}`),
+      "Company research (Medium and High) is gathered from the company's Wikipedia page and official website, with links to the sources.",
+      'Edit any section or bullet, save the prep to your account, and retrieve it any time before your next round.',
+      'Keeps running if you switch pages, just like Resume Match.',
     ],
   },
   {

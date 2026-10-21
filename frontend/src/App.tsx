@@ -13,7 +13,9 @@ import { DashboardPage } from '@/pages/dashboard-page';
 import { ApplicationsPage } from '@/pages/applications-page';
 import { ResumeMatchPage } from '@/pages/resume-match-page';
 import { ResumeMatchResultsPage } from '@/pages/resume-match-results-page';
+import { ContactPage } from '@/pages/contact-page';
 import { InterviewPrepPage } from '@/pages/interview-prep-page';
+import { InterviewPrepResultsPage } from '@/pages/interview-prep-results-page';
 import { FollowUpsPage } from '@/pages/follow-ups-page';
 import { AnalyticsPage } from '@/pages/analytics-page';
 import { ProfilePage } from '@/pages/profile-page';
@@ -37,6 +39,7 @@ function App() {
           element={atFeaturesHash ? <FeaturesPage /> : <MarketingLayout><HomePage /></MarketingLayout>}
         />
         <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 
@@ -48,6 +51,10 @@ function App() {
           element={<RequireAuth><AppLayout><ResumeMatchResultsPage /></AppLayout></RequireAuth>}
         />
         <Route path="/interview-prep" element={<RequireAuth><AppLayout><InterviewPrepPage /></AppLayout></RequireAuth>} />
+        <Route
+          path="/interview-prep/results"
+          element={<RequireAuth><AppLayout><InterviewPrepResultsPage /></AppLayout></RequireAuth>}
+        />
         <Route path="/follow-ups" element={<RequireAuth><AppLayout><FollowUpsPage /></AppLayout></RequireAuth>} />
         <Route path="/analytics" element={<RequireAuth><AppLayout><AnalyticsPage /></AppLayout></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><AppLayout><ProfilePage /></AppLayout></RequireAuth>} />

@@ -1,5 +1,11 @@
 package com.applyiq.demo;
 
+import com.applyiq.ai.ResumeMatchAnalysis;
+import com.applyiq.ai.InterviewPrepRepository;
+import com.applyiq.ai.ResumeMatchAnalysisRepository;
+import com.applyiq.ai.ResumeMatchService;
+import com.applyiq.ai.ScoredKeyword;
+import com.applyiq.ai.SkillExtractionService;
 import com.applyiq.applications.ApplicationStatus;
 import com.applyiq.applications.JobApplication;
 import com.applyiq.applications.JobApplicationRepository;
@@ -23,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Seeds the marketing site's "View demo dashboard" account with a fixed set of sample
@@ -44,6 +51,9 @@ public class PreviewAccountSeeder implements ApplicationRunner {
     private final ResumeRepository resumeRepository;
     private final ResumeStorageService resumeStorageService;
     private final PasswordEncoder passwordEncoder;
+    private final ResumeMatchAnalysisRepository matchAnalysisRepository;
+    private final InterviewPrepRepository interviewPrepRepository;
+    private final SkillExtractionService skillExtractionService;
 
     @Value("${app.demo.enabled:true}")
     private boolean enabled;
@@ -64,19 +74,22 @@ public class PreviewAccountSeeder implements ApplicationRunner {
         User user = userRepository.findByEmail(previewEmail)
                 .orElseGet(() -> userService.createUser("Caleb", "Kim", previewEmail, passwordEncoder.encode(previewPassword)));
 
+        matchAnalysisRepository.deleteAllByUser_Id(user.getId());
+        interviewPrepRepository.deleteAllByUser_Id(user.getId());
         jobApplicationRepository.deleteAllByUser_Id(user.getId());
         resumeRepository.findAllByUser_Id(user.getId())
                 .forEach(resume -> resumeStorageService.delete(resume.getStorageKey()));
         resumeRepository.deleteAllByUser_Id(user.getId());
 
-        jobApplicationRepository.saveAll(sampleApplications(user));
-        resumeRepository.saveAll(sampleResumes(user));
+        List<JobApplication> applications = jobApplicationRepository.saveAll(sampleApplications(user));
+        List<Resume> resumes = resumeRepository.saveAll(sampleResumes(user));
+        matchAnalysisRepository.saveAll(sampleMatchAnalyses(user, resumes.get(0), applications));
 
         log.info("Reset preview account: {} (password set via PREVIEW_PASSWORD)", previewEmail);
     }
 
     private List<JobApplication> sampleApplications(User user) {
-        return Arrays.asList(
+        List<JobApplication> applications = Arrays.asList(
                 JobApplication.builder().user(user)
                         .companyName("Capital One").jobTitle("Software Engineer Intern").location("McLean, VA")
                         .jobUrl("https://capitalone.com/careers/123").status(ApplicationStatus.INTERVIEWING)
@@ -87,7 +100,6 @@ public class PreviewAccountSeeder implements ApplicationRunner {
                         .referralNotes("Referred into the platform engineering team.")
                         .recruiterName("Alicia Reyes").recruiterEmail("alicia.reyes@capitalone.com")
                         .priorityLevel(PriorityLevel.HIGH)
-                        .jobDescription("Build and maintain secure REST APIs using Java, Spring Boot, and PostgreSQL.")
                         .notes("Final round scheduled for next week.").followUpCount(1).build(),
 
                 JobApplication.builder().user(user)
@@ -157,21 +169,51 @@ public class PreviewAccountSeeder implements ApplicationRunner {
                         .status(ApplicationStatus.APPLIED).source("LinkedIn").dateApplied(LocalDate.parse("2026-07-21"))
                         .hasReferral(false).priorityLevel(PriorityLevel.MEDIUM).followUpCount(0).build()
         );
+        applications.forEach(app -> app.setJobDescription(DemoContent.JOB_DESCRIPTIONS.get(app.getCompanyName())));
+        return applications;
+    }
+
+    /**
+     * One analysis per application from the free Java keyword pass only (no Claude call, so
+     * no predicted keywords), so the demo's analytics charts and Highest match card have data
+     * before a visitor runs anything. Live matches on the demo still go through ResumeMatchService.
+     */
+    private List<ResumeMatchAnalysis> sampleMatchAnalyses(User user, Resume resume, List<JobApplication> applications) {
+        List<ScoredKeyword> resumeSkills = skillExtractionService.extract(resume.getParsedText());
+        return applications.stream().map(app -> {
+            List<ScoredKeyword> jdSkills = skillExtractionService.extract(app.getJobDescription());
+            Map<Boolean, List<ScoredKeyword>> split = skillExtractionService.splitByPresence(jdSkills, resumeSkills);
+            List<ScoredKeyword> missing = split.get(false);
+            String rationale = "Your resume covers " + split.get(true).size() + " of the " + jdSkills.size()
+                    + " skills this posting names" + (missing.isEmpty() ? "."
+                    : "; the biggest gaps are " + String.join(", ", missing.stream().limit(3).map(ScoredKeyword::name).toList()) + ".");
+            ResumeMatchAnalysis analysis = ResumeMatchAnalysis.builder().user(user).resume(resume).jobApplication(app)
+                    .matchScore(ResumeMatchService.matchScore(split.get(true).size(), jdSkills.size()))
+                    .scoreRationale(rationale).build();
+            analysis.setJobDescriptionKeywords(jdSkills);
+            analysis.setFoundKeywords(split.get(true));
+            analysis.setMissingKeywords(missing);
+            analysis.setPredictedFoundKeywords(List.of());
+            analysis.setPredictedMissingKeywords(List.of());
+            analysis.setSuggestedResumeBullets(List.of());
+            return analysis;
+        }).toList();
     }
 
     private List<Resume> sampleResumes(User user) {
         return Arrays.asList(
-                seededResume(user, "Caleb_Kim_Resume_2026.pdf", true, placeholderPdf(142)),
-                seededResume(user, "Caleb_Kim_Resume_SWE_Intern.pdf", false, placeholderPdf(138)),
-                seededResume(user, "Caleb_Kim_Resume_DataFocus.pdf", false, placeholderPdf(151))
+                seededResume(user, "Caleb_Kim_Resume_2026.pdf", true, DemoContent.SWE_RESUME, placeholderPdf(142)),
+                seededResume(user, "Caleb_Kim_Resume_SWE_Intern.pdf", false, DemoContent.SWE_RESUME, placeholderPdf(138)),
+                seededResume(user, "Caleb_Kim_Resume_DataFocus.pdf", false, DemoContent.DATA_RESUME, placeholderPdf(151))
         );
     }
 
-    private Resume seededResume(User user, String fileName, boolean active, byte[] content) {
+    // parsedText is set directly because the PDFs are placeholders with no extractable text.
+    private Resume seededResume(User user, String fileName, boolean active, String parsedText, byte[] content) {
         String storageKey = resumeStorageService.newKey(user.getId());
         resumeStorageService.upload(storageKey, content, "application/pdf");
         return Resume.builder().user(user).fileName(fileName)
-                .contentType("application/pdf").active(active)
+                .contentType("application/pdf").active(active).parsedText(parsedText)
                 .storageKey(storageKey).fileSizeBytes(content.length).build();
     }
 

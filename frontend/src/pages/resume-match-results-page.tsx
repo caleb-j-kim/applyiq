@@ -1,46 +1,13 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Download, Hash, ListChecks, NotebookPen, Sparkles, XCircle, type LucideIcon } from 'lucide-react';
+import { useEffect } from 'react';
+import { ArrowLeft, CheckCircle2, Download, Hash, ListChecks, Sparkles, XCircle, type LucideIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
-import { toast } from 'sonner';
 
+import { appendToNotes, printAsPdf, SaveToNotesButton } from '@/components/app/save-to-notes';
 import { ScoreMeter } from '@/components/app/score-meter';
 import { Button } from '@/components/ui/button';
-import { apiFetch } from '@/lib/api-client';
-import { addNotification } from '@/lib/notification-store';
-import {
-  clearResumeMatchResults,
-  loadResumeMatchResults,
-  type ResumeMatchResultsState,
-} from '@/lib/resume-match-results';
+import { resumeMatchResults, type ResumeMatchResultsState } from '@/lib/stored-results';
 import { cn } from '@/lib/utils';
-import type { JobApplicationResponseDto } from '@/lib/mappers';
 import type { ScoredKeyword } from '@/types';
-
-// Appends a section of the results to the application's notes. Saving is
-// opt-in per section; nothing about the analysis is persisted otherwise.
-function SaveToNotesButton({ onSave, disabledReason }: { onSave: () => Promise<void>; disabledReason?: string }) {
-  const [saving, setSaving] = useState(false);
-  return (
-    <Button
-      size="sm"
-      variant="outline"
-      disabled={saving || !!disabledReason}
-      title={disabledReason ?? 'Append this section to the application notes'}
-      className="h-7 shrink-0 gap-1.5 border-slate-300 px-2 text-xs text-slate-600 hover:bg-slate-100 print:hidden dark:border-white/15 dark:text-white/70 dark:hover:bg-white/10"
-      onClick={async () => {
-        setSaving(true);
-        try {
-          await onSave();
-        } finally {
-          setSaving(false);
-        }
-      }}
-    >
-      <NotebookPen className="h-3.5 w-3.5" />
-      {saving ? 'Saving...' : 'Save to notes'}
-    </Button>
-  );
-}
 
 // A row's bar width is the keyword's own 1-100 importance weight — a sequential
 // (single-hue, more-is-darker-equivalent) encoding of "how expected is this,"
@@ -106,7 +73,7 @@ function KeywordList({
 export function ResumeMatchResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = (location.state as ResumeMatchResultsState | null) ?? loadResumeMatchResults();
+  const state = (location.state as ResumeMatchResultsState | null) ?? resumeMatchResults.load();
 
   useEffect(() => {
     if (!state) {
@@ -120,33 +87,7 @@ export function ResumeMatchResultsPage() {
   const saveDisabledReason = applicationId ? undefined : 'Save this job as an application to enable';
 
   const saveToNotes = async (title: string, lines: string[]) => {
-    if (!applicationId) return;
-    try {
-      // Re-fetch so we append to the latest notes rather than a stale copy.
-      const app = await apiFetch<JobApplicationResponseDto>(`/applications/${applicationId}`);
-      // Trailing newline leaves a blank line between consecutively saved sections.
-      const block = `\n${title}\n${lines.map((line) => `• ${line}`).join('\n')}\n`;
-      await apiFetch(`/applications/${applicationId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ notes: (app.notes ?? '') + block }),
-      });
-      const message = `Saved "${title}" to the notes for ${subject}.`;
-      toast.success(message);
-      addNotification(message);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to save to notes');
-    }
-  };
-
-  // Browser print dialog -> "Save as PDF". The dark: variant is screen-only
-  // (index.css), so the printout always uses the light palette. The keyword bars
-  // are background colors, which browsers drop when printing unless
-  // print-color-adjust is exact (set on the page root below).
-  const downloadPdf = () => {
-    const previousTitle = document.title;
-    document.title = `ApplyIQ Match Results - ${subject}`;
-    window.print();
-    document.title = previousTitle;
+    if (applicationId) await appendToNotes(applicationId, subject, title, lines);
   };
 
   return (
@@ -156,14 +97,14 @@ export function ResumeMatchResultsPage() {
           variant="ghost"
           className="w-fit gap-1.5 px-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-white/50 dark:hover:bg-white/10 dark:hover:text-white"
           onClick={() => {
-            clearResumeMatchResults();
+            resumeMatchResults.clear();
             navigate('/resume-match');
           }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Resume Match
         </Button>
-        <Button className="gap-1.5 bg-sky-500 text-white hover:bg-sky-400" onClick={downloadPdf}>
+        <Button className="gap-1.5 bg-sky-500 text-white hover:bg-sky-400" onClick={() => printAsPdf(`ApplyIQ Match Results - ${subject}`)}>
           <Download className="h-4 w-4" />
           Download PDF
         </Button>
@@ -213,8 +154,8 @@ export function ResumeMatchResultsPage() {
           icon={Hash}
           iconClassName="text-sky-400"
           saveDisabledReason={saveDisabledReason}
-          onSave={saveToNotes}
-          emptyLabel="No recognizable keywords found in this job description."
+            onSave={saveToNotes}
+            emptyLabel="No recognizable keywords found in this job description."
         />
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -224,8 +165,8 @@ export function ResumeMatchResultsPage() {
             icon={CheckCircle2}
             iconClassName="text-emerald-400"
             saveDisabledReason={saveDisabledReason}
-          onSave={saveToNotes}
-          emptyLabel="None of the job description's keywords were found."
+            onSave={saveToNotes}
+            emptyLabel="None of the job description's keywords were found."
           />
           <KeywordList
             title="Keywords Missed"
@@ -233,8 +174,8 @@ export function ResumeMatchResultsPage() {
             icon={XCircle}
             iconClassName="text-rose-400"
             saveDisabledReason={saveDisabledReason}
-          onSave={saveToNotes}
-          emptyLabel="Nothing missed — great coverage."
+            onSave={saveToNotes}
+            emptyLabel="Nothing missed — great coverage."
           />
         </div>
 
@@ -253,8 +194,8 @@ export function ResumeMatchResultsPage() {
               icon={CheckCircle2}
               iconClassName="text-emerald-400"
               saveDisabledReason={saveDisabledReason}
-          onSave={saveToNotes}
-          emptyLabel="None found."
+            onSave={saveToNotes}
+            emptyLabel="None found."
             />
             <KeywordList
               title="Missed Predicted Keywords"
@@ -262,8 +203,8 @@ export function ResumeMatchResultsPage() {
               icon={XCircle}
               iconClassName="text-rose-400"
               saveDisabledReason={saveDisabledReason}
-          onSave={saveToNotes}
-          emptyLabel="None missed."
+            onSave={saveToNotes}
+            emptyLabel="None missed."
             />
           </div>
         </div>

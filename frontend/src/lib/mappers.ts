@@ -25,6 +25,7 @@ const priorityMaps = enumMaps(PRIORITY_LEVELS);
 
 export const STATUS_TO_API = statusMaps.toApi;
 export const API_TO_STATUS = statusMaps.fromApi;
+export const STAGE_TO_API = stageMaps.toApi;
 
 export interface JobApplicationResponseDto {
   id: string;
@@ -94,6 +95,8 @@ export interface ApplicationFormValues {
   hasReferral: boolean;
   referralName: string;
   referralContactInfo: string;
+  recruiterName: string;
+  recruiterEmail: string;
   jobDescription: string;
   notes: string;
   interviewRoundsTotal: string;
@@ -114,6 +117,8 @@ export function mapApplicationToRequest(form: ApplicationFormValues) {
     hasReferral: form.hasReferral,
     referralName: form.hasReferral ? form.referralName || null : null,
     referralContactInfo: form.hasReferral ? form.referralContactInfo || null : null,
+    recruiterName: form.recruiterName || null,
+    recruiterEmail: form.recruiterEmail || null,
     priorityLevel: priorityMaps.toApi[form.priorityLevel],
     jobDescription: form.jobDescription || null,
     notes: form.notes || null,
@@ -178,6 +183,31 @@ export interface MatchAnalysisResponseDto {
   predictedMissed: ScoredKeyword[];
   scoreRationale: string;
   suggestedResumeBullets: string[];
+  createdAt: string;
+}
+
+export const PREP_EFFORTS = ['Low', 'Medium', 'High'] as const;
+export type PrepEffort = (typeof PREP_EFFORTS)[number];
+// What each level produces; sections come from PrepEffort.java. Shown on Interview Prep and Features.
+export const EFFORT_DESCRIPTIONS: Record<PrepEffort, string> = {
+  Low: 'Quick refresher: interviewer info, key points with a "why this company" answer, biggest gaps, likely questions and questions to ask. No company research. Fewest tokens.',
+  Medium: 'Full prep: adds a qualification-by-qualification fit map, company research, knowledge topics, behavioral stories, interview strategy and notes placeholders.',
+  High: 'The complete guide: everything in Medium plus interview approach, data structures recap, technical scenarios, coding strategy, and separate recruiter and hiring-manager questions. Most tokens.',
+};
+
+// Interview-prep endpoints (backend: com.applyiq.ai.InterviewPrepService):
+//   POST /ai/applications/{id}/interview-prep  { resumeId, effort } -> generates and returns one prep (not saved)
+//   POST /ai/interview-preps                   { ...prep }           -> saves it when the user presses "Save Results"
+//   GET  /ai/interview-preps                   -> every saved prep, newest first
+// Sections are open-ended so the titles come from the prompt/skill, not the frontend.
+export interface InterviewPrepResponseDto {
+  id: string;
+  jobApplicationId: string;
+  companyName: string;
+  jobTitle: string;
+  resumeName: string;
+  effort: PrepEffort;
+  sections: { title: string; bullets: string[] }[];
   createdAt: string;
 }
 

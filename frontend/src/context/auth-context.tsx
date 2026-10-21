@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { apiFetch, setAuthToken } from '@/lib/api-client';
-import { clearResumeMatchResults } from '@/lib/resume-match-results';
+import { clearStoredResults } from '@/lib/stored-results';
 
 interface UserResponseDto {
   id: string;
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((dto) => setUser(toAuthUser(dto)))
       .catch(() => {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
-        clearResumeMatchResults();
+        clearStoredResults();
         setAuthToken(null);
       })
       .finally(() => setIsInitializing(false));
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ email, password }),
         });
         localStorage.setItem(TOKEN_STORAGE_KEY, result.token);
-        clearResumeMatchResults();
+        clearStoredResults();
         setAuthToken(result.token);
         setUser(toAuthUser(result.user));
       },
@@ -94,13 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ firstName, lastName, email, password }),
         });
         localStorage.setItem(TOKEN_STORAGE_KEY, result.token);
-        clearResumeMatchResults();
+        clearStoredResults();
         setAuthToken(result.token);
         setUser(toAuthUser(result.user));
       },
       logout: () => {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
-        clearResumeMatchResults();
+        clearStoredResults();
         setAuthToken(null);
         setUser(null);
       },

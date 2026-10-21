@@ -11,12 +11,13 @@ import { useAuth } from '@/context/auth-context';
 import { PREVIEW_ACCOUNT_EMAIL, PREVIEW_ACCOUNT_PASSWORD } from '@/lib/preview-account';
 import { cn } from '@/lib/utils';
 
-const MARKETING_ROUTES = new Set(['/', '/features', '/login', '/signup']);
+const MARKETING_ROUTES = new Set(['/', '/features', '/contact', '/login', '/signup']);
 
 const MARKETING_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Features', href: '/#features' },
   { label: 'Demo', href: '/dashboard' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 const APP_LINKS = [

@@ -40,5 +40,5 @@ app:
   anthropic:
     api-key: ${ANTHROPIC_API_KEY:}
     base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
-    model: ${ANTHROPIC_MODEL:claude-sonnet-5}
+    model: ${ANTHROPIC_MODEL:claude-sonnet-5-5}
     max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}

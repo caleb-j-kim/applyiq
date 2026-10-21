@@ -4,7 +4,6 @@ import com.applyiq.common.exception.AiServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +35,10 @@ import java.util.stream.Collectors;
  *   marked with an ephemeral cache breakpoint, so repeat calls within the
  *   cache TTL pay the ~90%-cheaper cached-read rate on that block instead of
  *   paying full price every time. Anthropic's minimum cacheable block is
- *   1024 tokens for Sonnet — if the system prompt below ever drops under
+ *   model-dependent (1024+ tokens) — if the system prompt below ever drops under
  *   that (e.g. after trimming it), caching silently stops applying; keep it
  *   padded past that floor or check actual cache-hit usage in the response.</li>
- *   <li><b>Output</b>: forced tool-use with a strict schema asking only for
+ *   <li><b>Output</b>: structured outputs (a strict JSON schema) asking only for
  *   the delta Java doesn't already know — predicted keywords, a short
  *   rationale, optional bullets. Claude is never asked to re-emit the
  *   explicit keyword lists it was given; echoing back known data is pure
@@ -50,8 +49,6 @@ import java.util.stream.Collectors;
 public class ClaudeClient {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeClient.class);
-
-    private static final String TOOL_NAME = "submit_match_analysis";
 
     private static final String SYSTEM_PROMPT = """
             You are the skill-matching engine for ApplyIQ, a job application tracker. Given a job \
@@ -83,8 +80,6 @@ public class ClaudeClient {
             never generic boilerplate.
             - Only populate suggestedResumeBullets if the user turn explicitly asks for them; \
             otherwise return an empty array — do not generate them unprompted.
-            - Call the submit_match_analysis tool exactly once with your answer. Do not add prose \
-            outside the tool call.
             """;
 
     // Deliberately NOT a Spring-managed/injected ObjectMapper: Spring Boot 4 auto-configures
@@ -95,37 +90,38 @@ public class ClaudeClient {
     // of whatever Jackson version Spring's web layer is wired to.
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String TOOL_DEFINITION_JSON = """
+    // Structured outputs: the response text is guaranteed to match this schema. Strict mode
+    // needs additionalProperties=false and every property required, and doesn't allow
+    // numeric bounds - weights are clamped to 1-100 in Java instead.
+    private static final String MATCH_SCHEMA_JSON = """
             {
-              "name": "%s",
-              "description": "Submit the structured resume-to-job match analysis.",
-              "input_schema": {
-                "type": "object",
-                "properties": {
-                  "predictedKeywords": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "name": {"type": "string"},
-                        "weight": {"type": "integer", "minimum": 1, "maximum": 100},
-                        "foundInResume": {"type": "boolean"}
-                      },
-                      "required": ["name", "weight", "foundInResume"]
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["predictedKeywords", "scoreRationale", "suggestedResumeBullets"],
+              "properties": {
+                "predictedKeywords": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "weight", "foundInResume"],
+                    "properties": {
+                      "name": {"type": "string"},
+                      "weight": {"type": "integer"},
+                      "foundInResume": {"type": "boolean"}
                     }
-                  },
-                  "scoreRationale": {"type": "string"},
-                  "suggestedResumeBullets": {"type": "array", "items": {"type": "string"}}
+                  }
                 },
-                "required": ["predictedKeywords", "scoreRationale"]
+                "scoreRationale": {"type": "string"},
+                "suggestedResumeBullets": {"type": "array", "items": {"type": "string"}}
               }
             }
-            """.formatted(TOOL_NAME);
+            """;
 
     private final RestClient anthropicRestClient;
     private final String model;
     private final int maxTokens;
-    private final JsonNode toolDefinition;
+    private final JsonNode matchSchema;
 
     public ClaudeClient(RestClient anthropicRestClient,
                          @Value("${app.anthropic.model}") String model,
@@ -133,7 +129,7 @@ public class ClaudeClient {
         this.anthropicRestClient = anthropicRestClient;
         this.model = model;
         this.maxTokens = maxTokens;
-        this.toolDefinition = objectMapper.readTree(TOOL_DEFINITION_JSON);
+        this.matchSchema = objectMapper.readTree(MATCH_SCHEMA_JSON);
     }
 
     public record PredictedKeyword(String name, int weight, boolean foundInResume) {
@@ -148,60 +144,89 @@ public class ClaudeClient {
                                         List<ScoredKeyword> explicitJobDescriptionSkills,
                                         List<ScoredKeyword> explicitResumeSkills,
                                         boolean includeBulletSuggestions) {
-        String cleanedJobDescription = JdTextCleaner.clean(jobDescription);
-        ObjectNode requestBody = buildRequestBody(cleanedJobDescription, explicitJobDescriptionSkills,
+        String userTurn = buildUserTurn(JdTextCleaner.clean(jobDescription), explicitJobDescriptionSkills,
                 explicitResumeSkills, includeBulletSuggestions);
+        // A lookup-style task: no extended thinking ("between_tools" is Sonnet 5.5's off switch), low effort.
+        JsonNode input = generateJson(SYSTEM_PROMPT, userTurn, matchSchema, "between_tools", "low", maxTokens,
+                "Resume match analysis");
+
+        List<PredictedKeyword> predicted = new ArrayList<>();
+        for (JsonNode kw : input.path("predictedKeywords")) {
+            predicted.add(new PredictedKeyword(
+                    kw.path("name").asText(""),
+                    Math.clamp(kw.path("weight").asInt(50), 1, 100),
+                    kw.path("foundInResume").asBoolean(false)
+            ));
+        }
+        List<String> bullets = new ArrayList<>();
+        for (JsonNode bullet : input.path("suggestedResumeBullets")) {
+            bullets.add(bullet.asText());
+        }
+        return new AnalysisResult(predicted, input.path("scoreRationale").asText(""), bullets);
+    }
+
+    /**
+     * One Messages API call whose answer must match {@code schema}. Shared by every AI feature:
+     * the system prompt gets a cache breakpoint, refusals fall back server-side to another
+     * model, and anything other than a complete, schema-valid answer becomes an
+     * {@link AiServiceException} named after {@code feature}.
+     */
+    public JsonNode generateJson(String systemPrompt, String userTurn, JsonNode schema, String thinkingType,
+                                 String effort, int maxTokens, String feature) {
+        ObjectNode root = objectMapper.createObjectNode();
+        root.put("model", model);
+        root.put("max_tokens", maxTokens);
+        root.put("fallbacks", "default");
+        root.putObject("thinking").put("type", thinkingType);
+
+        ObjectNode systemBlock = root.putArray("system").addObject();
+        systemBlock.put("type", "text");
+        systemBlock.put("text", systemPrompt);
+        systemBlock.putObject("cache_control").put("type", "ephemeral");
+
+        ObjectNode userMessage = root.putArray("messages").addObject();
+        userMessage.put("role", "user");
+        userMessage.put("content", userTurn);
+
+        ObjectNode outputConfig = root.putObject("output_config");
+        outputConfig.put("effort", effort);
+        ObjectNode format = outputConfig.putObject("format");
+        format.put("type", "json_schema");
+        format.set("schema", schema);
 
         String responseBody;
         try {
             responseBody = anthropicRestClient.post()
                     .uri("/v1/messages")
+                    .header("anthropic-beta", "server-side-fallback-2026-07-01")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(objectMapper.writeValueAsString(requestBody))
+                    .body(objectMapper.writeValueAsString(root))
                     .retrieve()
                     .body(String.class);
         } catch (Exception e) {
-            log.error("Anthropic API call failed", e);
-            throw new AiServiceException("Resume match analysis is temporarily unavailable. Please try again.", e);
+            log.error("Anthropic API call failed ({})", feature, e);
+            throw new AiServiceException(feature + " is temporarily unavailable. Please try again.", e);
         }
 
-        JsonNode response;
         try {
-            response = objectMapper.readTree(responseBody);
-        } catch (Exception e) {
-            log.error("Failed to parse Anthropic API response: {}", responseBody, e);
-            throw new AiServiceException("Resume match analysis returned an unreadable response.", e);
+            JsonNode response = objectMapper.readTree(responseBody);
+            String stopReason = response.path("stop_reason").asText();
+            if ("refusal".equals(stopReason)) {
+                log.warn("{} declined: {}", feature, response.path("stop_details"));
+                throw new AiServiceException(feature + " was declined for this input.");
+            }
+            if ("max_tokens".equals(stopReason)) {
+                throw new AiServiceException(feature + " ran out of room before finishing. Try a lower effort level.");
+            }
+            for (JsonNode block : response.path("content")) {
+                if ("text".equals(block.path("type").asText())) {
+                    return objectMapper.readTree(block.path("text").asText());
+                }
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Anthropic API response ({}): {}", feature, responseBody, e);
         }
-
-        return parseToolUseResponse(response);
-    }
-
-    private ObjectNode buildRequestBody(String cleanedJobDescription,
-                                         List<ScoredKeyword> jdSkills,
-                                         List<ScoredKeyword> resumeSkills,
-                                         boolean includeBulletSuggestions) {
-        ObjectNode root = objectMapper.createObjectNode();
-        root.put("model", model);
-        root.put("max_tokens", maxTokens);
-
-        ArrayNode system = root.putArray("system");
-        ObjectNode systemBlock = system.addObject();
-        systemBlock.put("type", "text");
-        systemBlock.put("text", SYSTEM_PROMPT);
-        systemBlock.putObject("cache_control").put("type", "ephemeral");
-
-        ArrayNode messages = root.putArray("messages");
-        ObjectNode userMessage = messages.addObject();
-        userMessage.put("role", "user");
-        userMessage.put("content", buildUserTurn(cleanedJobDescription, jdSkills, resumeSkills, includeBulletSuggestions));
-
-        root.putArray("tools").add(toolDefinition);
-
-        ObjectNode toolChoice = root.putObject("tool_choice");
-        toolChoice.put("type", "tool");
-        toolChoice.put("name", TOOL_NAME);
-
-        return root;
+        throw new AiServiceException(feature + " returned an unreadable response.");
     }
 
     private String buildUserTurn(String cleanedJobDescription,
@@ -235,38 +260,5 @@ public class ClaudeClient {
         return skills.stream()
                 .map(k -> k.name() + " (" + k.weight() + ")")
                 .collect(Collectors.joining(", "));
-    }
-
-    private AnalysisResult parseToolUseResponse(JsonNode response) {
-        if (response == null || !response.has("content")) {
-            throw new AiServiceException("Resume match analysis returned an unexpected response.");
-        }
-        for (JsonNode block : response.get("content")) {
-            if (!"tool_use".equals(block.path("type").asText())) {
-                continue;
-            }
-            JsonNode input = block.get("input");
-            if (input == null) {
-                continue;
-            }
-
-            List<PredictedKeyword> predicted = new ArrayList<>();
-            for (JsonNode kw : input.path("predictedKeywords")) {
-                predicted.add(new PredictedKeyword(
-                        kw.path("name").asText(""),
-                        kw.path("weight").asInt(50),
-                        kw.path("foundInResume").asBoolean(false)
-                ));
-            }
-
-            List<String> bullets = new ArrayList<>();
-            for (JsonNode bullet : input.path("suggestedResumeBullets")) {
-                bullets.add(bullet.asText());
-            }
-
-            String rationale = input.path("scoreRationale").asText("");
-            return new AnalysisResult(predicted, rationale, bullets);
-        }
-        throw new AiServiceException("Resume match analysis did not return a structured result.");
     }
 }

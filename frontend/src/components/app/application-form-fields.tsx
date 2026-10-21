@@ -28,6 +28,8 @@ export const emptyApplicationForm: ApplicationFormValues = {
   hasReferral: false,
   referralName: '',
   referralContactInfo: '',
+  recruiterName: '',
+  recruiterEmail: '',
   jobDescription: '',
   notes: '',
   interviewRoundsTotal: '',
@@ -78,7 +80,7 @@ export function ApplicationFormFields({
   const set = <K extends keyof ApplicationFormValues>(key: K, value: ApplicationFormValues[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const textField = (key: 'companyName' | 'jobTitle' | 'location' | 'jobUrl' | 'referralName' | 'referralContactInfo', label: string, extra?: { type?: string; required?: boolean }) => (
+  const textField = (key: 'companyName' | 'jobTitle' | 'location' | 'jobUrl' | 'referralName' | 'referralContactInfo' | 'recruiterName' | 'recruiterEmail', label: string, extra?: { type?: string; required?: boolean }) => (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={key}>{label}</Label>
       <Input id={key} type={extra?.type} required={extra?.required} value={form[key]} onChange={(e) => set(key, e.target.value)} />
@@ -125,6 +127,11 @@ export function ApplicationFormFields({
         />
       </div>
 
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {textField('recruiterName', 'Recruiter / interviewer name')}
+        {textField('recruiterEmail', 'Recruiter / interviewer email', { type: 'email' })}
+      </div>
+
       <div className="flex items-center gap-2">
         <Checkbox
           id="hasReferral"
@@ -140,32 +147,7 @@ export function ApplicationFormFields({
         </div>
       )}
 
-      {form.status === 'Interviewing' && (
-        <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
-            <NumberInput id="interviewRoundsTotal" value={form.interviewRoundsTotal} onValueChange={(v) => set('interviewRoundsTotal', v)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
-            <NumberInput
-              id="interviewRoundsCompleted"
-              value={form.interviewRoundsCompleted}
-              max={Number(form.interviewRoundsTotal) || undefined}
-              onValueChange={(v) => set('interviewRoundsCompleted', v)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label>Current interview stage</Label>
-            <OptionSelect<InterviewStage>
-              value={form.interviewStage}
-              options={INTERVIEW_STAGES}
-              onChange={(v) => set('interviewStage', v)}
-              placeholder="Select a stage"
-            />
-          </div>
-        </div>
-      )}
+      {form.status === 'Interviewing' && <InterviewFields form={form} setForm={setForm} />}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="jobDescription">
@@ -185,5 +167,44 @@ export function ApplicationFormFields({
         <Textarea id="notes" rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
       </div>
     </>
+  );
+}
+
+// Interview rounds and stage; shown for "Interviewing" applications here and in Interview Prep's status prompt.
+export function InterviewFields({
+  form,
+  setForm,
+}: {
+  form: ApplicationFormValues;
+  setForm: Dispatch<SetStateAction<ApplicationFormValues>>;
+}) {
+  const set = <K extends keyof ApplicationFormValues>(key: K, value: ApplicationFormValues[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  return (
+    <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="interviewRoundsTotal">Total interview rounds</Label>
+        <NumberInput id="interviewRoundsTotal" value={form.interviewRoundsTotal} onValueChange={(v) => set('interviewRoundsTotal', v)} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="interviewRoundsCompleted">Rounds completed</Label>
+        <NumberInput
+          id="interviewRoundsCompleted"
+          value={form.interviewRoundsCompleted}
+          max={Number(form.interviewRoundsTotal) || undefined}
+          onValueChange={(v) => set('interviewRoundsCompleted', v)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        <Label>Current interview stage</Label>
+        <OptionSelect<InterviewStage>
+          value={form.interviewStage}
+          options={INTERVIEW_STAGES}
+          onChange={(v) => set('interviewStage', v)}
+          placeholder="Select a stage"
+        />
+      </div>
+    </div>
   );
 }

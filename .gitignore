@@ -25,3 +25,6 @@ npm-debug.log*
 .idea/
 .vscode/
 *.iml
+
+# Personal interview notes (salary, names) used as the interview-prep skill reference; repo is public.
+.claude/skills/caleb-custom/reference/interview-prep-template-example.txt

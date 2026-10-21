@@ -13,4 +13,6 @@ public interface ResumeMatchAnalysisRepository extends JpaRepository<ResumeMatch
     Optional<ResumeMatchAnalysis> findByIdAndUser_Id(UUID id, UUID userId);
 
     List<ResumeMatchAnalysis> findByUser_IdOrderByCreatedAtDesc(UUID userId);
+
+    void deleteAllByUser_Id(UUID userId);
 }

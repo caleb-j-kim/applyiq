@@ -117,6 +117,11 @@ public class ResumeMatchService {
         return new MatchAnalyticsResponse(counted.size(), distribution, topMissing, topMatches);
     }
 
+    /** Share of the posting's explicit skills the resume also names, 0-100. */
+    public static int matchScore(int found, int total) {
+        return total == 0 ? 0 : Math.round(100f * found / total);
+    }
+
     private ResumeMatchAnalysis runAnalysis(UUID userId, Resume resume, String jobDescription,
                                              boolean includeBulletSuggestions) {
         // Self-healing: resumes uploaded before text extraction existed, or seeded directly
@@ -143,7 +148,7 @@ public class ResumeMatchService {
                 .collect(Collectors.partitioningBy(ClaudeClient.PredictedKeyword::foundInResume,
                         Collectors.mapping(k -> new ScoredKeyword(k.name(), k.weight()), Collectors.toList())));
 
-        int matchScore = jdKeywords.isEmpty() ? 0 : Math.round(100f * foundInResume.size() / jdKeywords.size());
+        int matchScore = matchScore(foundInResume.size(), jdKeywords.size());
 
         User user = userService.getById(userId);
         ResumeMatchAnalysis analysis = ResumeMatchAnalysis.builder()
