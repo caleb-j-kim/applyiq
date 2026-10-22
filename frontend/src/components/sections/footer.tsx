@@ -1,3 +1,5 @@
+import { Link } from 'react-router';
+
 import applyiqIcon from '@/assets/images/applyiq-icon.png';
 import { Separator } from '@/components/ui/separator';
 
@@ -5,17 +7,13 @@ const FOOTER_LINKS = {
   Product: [
     { label: 'Features', href: '#features' },
     { label: 'How it works', href: '#how-it-works' },
-    { label: 'Pricing', href: '#' },
-  ],
-  Company: [
-    { label: 'About', href: '#' },
-    { label: 'Careers', href: '#' },
-    { label: 'Blog', href: '#' },
+    { label: 'Pricing', href: '/contact#support' },
   ],
   Support: [
     { label: 'FAQ', href: '#faq' },
-    { label: 'Contact', href: '#' },
-    { label: 'Privacy policy', href: '#' },
+    { label: 'Contact', href: '/contact' },
+    { label: 'Privacy policy', href: '/privacy' },
+    { label: 'Terms of service', href: '/terms' },
   ],
 };
 
@@ -43,12 +41,16 @@ export function Footer() {
               <ul className="mt-4 space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-white/50 transition-colors hover:text-white"
-                    >
-                      {link.label}
-                    </a>
+                    {/* Router links for app paths: a full page load off "/" gets sent home (see auth-context). */}
+                    {link.href.startsWith('/') ? (
+                      <Link to={link.href} className="text-sm text-white/50 transition-colors hover:text-white">
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a href={link.href} className="text-sm text-white/50 transition-colors hover:text-white">
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

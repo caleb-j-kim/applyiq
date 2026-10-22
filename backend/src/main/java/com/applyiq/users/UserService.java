@@ -35,4 +35,8 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No user found with id " + id));
     }
+
+    public User save(User user) {
+        return userRepository.save(user);
+    }
 }

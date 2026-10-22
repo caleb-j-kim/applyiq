@@ -3,6 +3,7 @@ import {
   INTERVIEW_STAGES,
   PRIORITY_LEVELS,
   type ApplicationStatus,
+  type FollowUpRecommendation,
   type InterviewStage,
   type JobApplication,
   type PriorityLevel,
@@ -209,6 +210,13 @@ export interface InterviewPrepResponseDto {
   effort: PrepEffort;
   sections: { title: string; bullets: string[] }[];
   createdAt: string;
+}
+
+// Backend: com.applyiq.followups.FollowUpController — same shape as the UI type except the status enum.
+export type FollowUpResponseDto = Omit<FollowUpRecommendation, 'status'> & { status: string };
+
+export function mapFollowUpResponse(dto: FollowUpResponseDto): FollowUpRecommendation {
+  return { ...dto, status: API_TO_STATUS[dto.status] ?? 'Applied' };
 }
 
 export function formatWeekLabel(isoDate: string): string {

@@ -3,6 +3,7 @@ package com.applyiq.auth;
 import com.applyiq.common.ApiResponse;
 import com.applyiq.users.UserResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,14 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(authService.login(request));
+    }
+
+    public record TwoFactorLoginRequest(@NotBlank String challengeToken, @NotBlank String code) {
+    }
+
+    @PostMapping("/login/2fa")
+    public ApiResponse<AuthResponse> loginTwoFactor(@Valid @RequestBody TwoFactorLoginRequest request) {
+        return ApiResponse.success(authService.completeTwoFactorLogin(request.challengeToken(), request.code()));
     }
 
     @GetMapping("/me")

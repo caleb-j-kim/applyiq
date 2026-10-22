@@ -21,6 +21,7 @@ import { AnalyticsPage } from '@/pages/analytics-page';
 import { ProfilePage } from '@/pages/profile-page';
 import { UploadedResumesPage } from '@/pages/uploaded-resumes-page';
 import { SettingsPage } from '@/pages/settings-page';
+import { PrivacyPage, TermsPage } from '@/pages/legal-pages';
 
 function App() {
   const location = useLocation();
@@ -40,6 +41,8 @@ function App() {
         />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 

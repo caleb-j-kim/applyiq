@@ -42,6 +42,24 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    // Two-factor authentication (auth.TwoFactorService). The secret is encrypted with
+    // common.TokenCipher and is set as soon as setup starts; totpEnabled only flips once the user
+    // proves their app works by entering a code. The column default lets ddl-auto add it to
+    // existing rows.
+    @Column(name = "totp_secret_enc", columnDefinition = "TEXT")
+    private String totpSecretEnc;
+
+    @Column(name = "totp_enabled", nullable = false, columnDefinition = "boolean default false")
+    private boolean totpEnabled;
+
+    // Last 30-second step a code was accepted for, so the same code can't be used twice.
+    @Column(name = "totp_last_step")
+    private Long totpLastStep;
+
+    // SHA-256 hashes of the unused one-time recovery codes, comma-separated.
+    @Column(name = "totp_recovery_hashes", columnDefinition = "TEXT")
+    private String totpRecoveryHashes;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

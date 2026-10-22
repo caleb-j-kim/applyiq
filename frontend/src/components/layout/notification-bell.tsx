@@ -14,6 +14,12 @@ import {
   getNotificationsSnapshot,
   subscribeNotifications,
 } from '@/lib/notification-store';
+import {
+  markAllServerNotificationsRead,
+  markServerNotificationRead,
+  refreshServerNotifications,
+  useServerNotifications,
+} from '@/lib/server-notifications';
 
 function timeAgo(timestamp: number): string {
   const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
@@ -27,11 +33,23 @@ function timeAgo(timestamp: number): string {
 }
 
 export function NotificationBell() {
+  useServerNotifications();
   const notifications = useSyncExternalStore(subscribeNotifications, getNotificationsSnapshot);
   const hasUnread = notifications.length > 0;
 
+  const dismiss = (id: string, serverId?: string) => {
+    dismissNotification(id);
+    if (serverId) markServerNotificationRead(serverId);
+  };
+
+  const clearAll = () => {
+    const hadServer = notifications.some((n) => n.serverId);
+    clearAllNotifications();
+    if (hadServer) markAllServerNotificationsRead();
+  };
+
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => open && refreshServerNotifications()}>
       <DropdownMenuTrigger
         aria-label="Notifications"
         className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-500 outline-none hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-sky-400 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
@@ -42,13 +60,13 @@ export function NotificationBell() {
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={10} className="w-80 p-0">
-        <div className="flex items-center justify-between px-3 py-2">
+        <div className="relative flex items-center justify-center px-3 py-2">
           <span className="text-sm font-medium text-foreground">Notifications</span>
           {hasUnread && (
             <button
               type="button"
-              onClick={() => clearAllNotifications()}
-              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+              onClick={clearAll}
+              className="absolute right-3 text-xs text-muted-foreground hover:text-foreground hover:underline"
             >
               Clear all
             </button>
@@ -67,6 +85,7 @@ export function NotificationBell() {
                 className="flex items-start gap-2 border-b border-border px-3 py-2.5 last:border-b-0"
               >
                 <div className="min-w-0 flex-1">
+                  {n.title && <p className="text-sm font-medium text-foreground">{n.title}</p>}
                   <p className="text-sm text-foreground">{n.message}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
                 </div>
@@ -75,7 +94,7 @@ export function NotificationBell() {
                   variant="ghost"
                   aria-label="Dismiss notification"
                   className="shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => dismissNotification(n.id)}
+                  onClick={() => dismiss(n.id, n.serverId)}
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>

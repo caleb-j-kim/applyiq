@@ -32,7 +32,12 @@ function failAndNotify(message: string): never {
   throw new Error(message);
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+// quiet: throw without adding a bell notification (background polling would otherwise repeat the same error).
+export async function apiFetch<T>(path: string, options: RequestInit = {}, { quiet = false } = {}): Promise<T> {
+  const fail = (message: string): never => {
+    if (quiet) throw new Error(message);
+    return failAndNotify(message);
+  };
   const headers = new Headers(options.headers);
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
     headers.set('Content-Type', 'application/json');
@@ -44,12 +49,12 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
 
   if (!response.ok) {
-    failAndNotify(await parseErrorMessage(response));
+    fail(await parseErrorMessage(response));
   }
 
   const envelope = (await response.json()) as ApiEnvelope<T>;
   if (!envelope.success) {
-    failAndNotify(envelope.message ?? 'Request failed');
+    fail(envelope.message ?? 'Request failed');
   }
   return envelope.data;
 }

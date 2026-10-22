@@ -1,36 +1,38 @@
-// ponytail: follow-up recommendations stay mocked until the ghosting-risk model exists.
+// ponytail: the Follow-Ups page stays on this sample data until it's wired to GET /api/follow-ups.
+// Each entry is the real exported decision tree's output (backend/src/main/resources/ml/follow-up-tree.json)
+// for that scenario, so actions, risk, confidence and factors match what the backend returns.
 import type { FollowUpRecommendation } from '@/types';
 
-export const mockFollowUpRecommendations: FollowUpRecommendation[] = [
+const recommendations: Omit<FollowUpRecommendation, 'id' | 'addedByUser'>[] = [
   {
-    applicationId: 'a2',
-    companyName: 'Google',
-    jobTitle: 'Software Engineer Intern',
+    applicationId: 'a7',
+    companyName: 'IBM',
+    jobTitle: 'Backend Engineer',
     status: 'Applied',
-    daysSinceApplied: 14,
-    recommendedAction: 'Send first follow-up',
-    reason: 'You applied 14 days ago and have not sent a follow-up yet.',
-    ghostingRiskScore: 0.42,
+    daysSinceApplied: 90,
+    recommendedAction: 'Move to rejected',
+    reason: 'No response in over two months — treat this as a silent rejection.',
+    decisionFactors: [
+      '90 days since last contact (model cutoff: over 88)',
+      '90 days since applying (model cutoff: 92 or fewer)',
+      '1 follow-up sent',
+      '0 interview rounds completed',
+      'No referral',
+    ],
+    ghostingRiskScore: 0.98,
+    confidence: 0.91,
   },
   {
     applicationId: 'a6',
     companyName: 'Booz Allen Hamilton',
     jobTitle: 'Java Developer',
-    status: 'Ghosted',
+    status: 'Applied',
     daysSinceApplied: 61,
     recommendedAction: 'Mark as likely ghosted',
-    reason: 'No response for 51 days and one follow-up already sent. Recruiter contact went unanswered.',
-    ghostingRiskScore: 0.81,
-  },
-  {
-    applicationId: 'a5',
-    companyName: 'Microsoft',
-    jobTitle: 'Product Manager Intern',
-    status: 'Final Round',
-    daysSinceApplied: 42,
-    recommendedAction: 'Send final follow-up',
-    reason: 'Final round completed 11 days ago with no update. One more follow-up is reasonable before moving on.',
-    ghostingRiskScore: 0.58,
+    reason: 'Multiple follow-ups have gone unanswered for weeks; this one has likely gone cold.',
+    decisionFactors: ['51 days since last contact (model range: 25–74)', '2 follow-ups sent'],
+    ghostingRiskScore: 0.98,
+    confidence: 0.96,
   },
   {
     applicationId: 'a10',
@@ -39,8 +41,63 @@ export const mockFollowUpRecommendations: FollowUpRecommendation[] = [
     status: 'Applied',
     daysSinceApplied: 25,
     recommendedAction: 'Send first follow-up',
-    reason: 'You applied 25 days ago with no recruiter contact recorded yet.',
-    ghostingRiskScore: 0.51,
+    reason: "It's been quiet long enough that a short check-in is worth sending.",
+    decisionFactors: [
+      '25 days since last contact (model range: 10–35)',
+      'No follow-ups sent yet',
+      '25 days since applying (model cutoff: 40 or fewer)',
+    ],
+    ghostingRiskScore: 0.7,
+    confidence: 0.96,
+  },
+  {
+    applicationId: 'a2',
+    companyName: 'Google',
+    jobTitle: 'Software Engineer Intern',
+    status: 'Applied',
+    daysSinceApplied: 14,
+    recommendedAction: 'Send first follow-up',
+    reason: "It's been quiet long enough that a short check-in is worth sending.",
+    decisionFactors: [
+      '14 days since last contact (model range: 10–35)',
+      'No follow-ups sent yet',
+      '14 days since applying (model cutoff: 40 or fewer)',
+    ],
+    ghostingRiskScore: 0.38,
+    confidence: 0.96,
+  },
+  {
+    applicationId: 'a3',
+    companyName: 'Capital One',
+    jobTitle: 'Software Engineer, New Grad',
+    status: 'Online Assessment',
+    daysSinceApplied: 12,
+    recommendedAction: 'Send first follow-up',
+    reason: "It's been quiet long enough that a short check-in is worth sending.",
+    decisionFactors: [
+      '12 days since last contact (model range: 10–35)',
+      'No follow-ups sent yet',
+      '12 days since applying (model cutoff: 40 or fewer)',
+    ],
+    ghostingRiskScore: 0.35,
+    confidence: 0.96,
+  },
+  {
+    applicationId: 'a5',
+    companyName: 'Microsoft',
+    jobTitle: 'Product Manager Intern',
+    status: 'Final Round',
+    daysSinceApplied: 42,
+    recommendedAction: 'Send final follow-up',
+    reason: 'One follow-up went unanswered — one last, brief note is reasonable before moving on.',
+    decisionFactors: [
+      '15 days since last contact (model range: 14–16)',
+      '1 follow-up sent',
+      '3 interview rounds completed',
+      'No referral',
+    ],
+    ghostingRiskScore: 0.31,
+    confidence: 0.98,
   },
   {
     applicationId: 'a11',
@@ -49,7 +106,19 @@ export const mockFollowUpRecommendations: FollowUpRecommendation[] = [
     status: 'Withdrawn',
     daysSinceApplied: 84,
     recommendedAction: 'Archive application',
-    reason: 'Application was withdrawn — safe to archive and remove from active tracking.',
-    ghostingRiskScore: 0.1,
+    reason: 'This application is closed — safe to archive and remove from active tracking.',
+    decisionFactors: [
+      '84 days since last contact (model range: 84–92)',
+      'Medium priority',
+      '84 days since applying (model cutoff: 100 or fewer)',
+    ],
+    ghostingRiskScore: 0.06,
+    confidence: 0.96,
   },
 ];
+
+export const mockFollowUpRecommendations: FollowUpRecommendation[] = recommendations.map((r) => ({
+  ...r,
+  id: r.applicationId!,
+  addedByUser: false,
+}));

@@ -2,8 +2,10 @@ package com.applyiq.common;
 
 import com.applyiq.common.exception.AiServiceException;
 import com.applyiq.common.exception.EmailAlreadyExistsException;
+import com.applyiq.common.exception.BadRequestException;
 import com.applyiq.common.exception.InvalidFileException;
 import com.applyiq.common.exception.ResourceNotFoundException;
+import com.applyiq.common.exception.TooManyRequestsException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +84,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidFileException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidFile(InvalidFileException ex) {
         return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTooManyRequests(TooManyRequestsException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

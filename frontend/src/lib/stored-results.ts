@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import type { InterviewPrepResponseDto, MatchAnalysisResponseDto } from '@/lib/mappers';
-import { addNotification } from '@/lib/notification-store';
+import { addNotification, loadNotificationSettings, type NotificationSetting } from '@/lib/notification-store';
 
 interface StoredResult {
   resumeName?: string;
@@ -24,11 +24,12 @@ export interface InterviewPrepResultsState extends StoredResult {
 
 // The last result of each AI page is kept until the user presses its "Back" button
 // or logs out, so revisiting the page shows it again instead of re-running a paid call.
-function storedResult<T>(key: string, resultsPath: string, label: string) {
+function storedResult<T>(key: string, resultsPath: string, label: string, setting: NotificationSetting) {
   return {
     key,
     resultsPath,
     label,
+    setting,
     save: (state: T) => localStorage.setItem(key, JSON.stringify(state)),
     load: (): T | null => {
       try {
@@ -42,8 +43,8 @@ function storedResult<T>(key: string, resultsPath: string, label: string) {
   };
 }
 
-export const resumeMatchResults = storedResult<ResumeMatchResultsState>('applyiq.resumeMatchResults', '/resume-match/results', 'Resume match');
-export const interviewPrepResults = storedResult<InterviewPrepResultsState>('applyiq.interviewPrepResults', '/interview-prep/results', 'Interview prep');
+export const resumeMatchResults = storedResult<ResumeMatchResultsState>('applyiq.resumeMatchResults', '/resume-match/results', 'Resume match', 'matchScores');
+export const interviewPrepResults = storedResult<InterviewPrepResultsState>('applyiq.interviewPrepResults', '/interview-prep/results', 'Interview prep', 'interviewPrep');
 
 export function clearStoredResults() {
   resumeMatchResults.clear();
@@ -86,7 +87,8 @@ export function useBackgroundResult<T extends StoredResult>(store: ReturnType<ty
         // Logged out meanwhile (running was cleared): drop the result.
         if (running.get(store.key) !== job) return null;
         store.save(state);
-        if (!mounted.current) {
+        // Finished after the user left the page: tell them, unless they turned that off in Settings.
+        if (!mounted.current && loadNotificationSettings()[store.setting]) {
           const message = `${store.label} for ${state.subject} is ready.`;
           toast.success(message, { action: { label: 'View', onClick: () => navigate(store.resultsPath, { state }) } });
           addNotification(message);

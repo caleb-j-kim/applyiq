@@ -42,6 +42,15 @@ services:
       PREVIEW_EMAIL: ${PREVIEW_EMAIL:-caleb.kim@applyiq.com}
       PREVIEW_PASSWORD: ${PREVIEW_PASSWORD:-demo1234}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      EMAIL_TOKEN_KEY: ${EMAIL_TOKEN_KEY:-}
+      EMAIL_OAUTH_REDIRECT_URI: ${EMAIL_OAUTH_REDIRECT_URI:-http://127.0.0.1:8080/api/email/oauth/callback}
+      # "Today" for follow-up day counts and sent dates. Without it the container runs on UTC,
+      # so evenings in US time already count as tomorrow.
+      TZ: ${TZ:-America/Chicago}
+      # Set to DEBUG to log what the email sync decides for each message (includes subjects).
+      LOGGING_LEVEL_COM_APPLYIQ_EMAIL: ${LOGGING_LEVEL_COM_APPLYIQ_EMAIL:-INFO}
     ports:
       - "${SERVER_PORT:-8080}:8080"
 

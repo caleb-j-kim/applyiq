@@ -10,20 +10,38 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, completeTwoFactorLogin } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Set after a correct password on an account with 2FA on: the next step asks for the code.
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [code, setCode] = useState('');
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
     try {
-      await login(email, password);
+      if (challengeToken) {
+        await completeTwoFactorLogin(challengeToken, code.trim());
+        navigate('/dashboard');
+        return;
+      }
+      const result = await login(email, password);
+      if (result.twoFactorRequired) {
+        setChallengeToken(result.challengeToken);
+        return;
+      }
       navigate('/dashboard');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Login failed');
+      const message = error instanceof Error ? error.message : 'Login failed';
+      toast.error(message);
+      // The challenge only lasts 5 minutes; after that the password step has to be redone.
+      if (challengeToken && message.includes('expired')) {
+        setChallengeToken(null);
+        setCode('');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -46,6 +64,42 @@ export function LoginPage() {
         <Card className="border-white/10 bg-white/[0.03] backdrop-blur">
           <CardHeader className="sr-only">Log in</CardHeader>
           <CardContent>
+            {challengeToken ? (
+              <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="code" className="text-white/80">
+                    Two-factor code
+                  </Label>
+                  <p className="text-xs text-white/50">
+                    Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+                  </p>
+                  <Input
+                    id="code"
+                    required
+                    autoFocus
+                    autoComplete="one-time-code"
+                    inputMode="text"
+                    placeholder="123456"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="border-white/15 bg-black/40 text-white tracking-widest"
+                  />
+                </div>
+                <Button type="submit" disabled={isSubmitting} className="mt-2 bg-sky-500 text-white hover:bg-sky-400">
+                  {isSubmitting ? 'Verifying...' : 'Verify'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChallengeToken(null);
+                    setCode('');
+                  }}
+                  className="text-xs text-white/50 hover:text-white hover:underline"
+                >
+                  Back to email and password
+                </button>
+              </form>
+            ) : (
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="email" className="text-white/80">
@@ -83,6 +137,7 @@ export function LoginPage() {
                 {isSubmitting ? 'Logging in...' : 'Log in'}
               </Button>
             </form>
+            )}
           </CardContent>
         </Card>
 

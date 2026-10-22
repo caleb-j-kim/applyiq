@@ -7,6 +7,7 @@ import {
   FileStack,
   LayoutDashboard,
   ShieldCheck,
+  MailCheck,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -52,7 +53,8 @@ const CORE_FEATURES: FeatureDetail[] = [
       'Interview rate: the percentage of your applications that have gotten you an interview, compared to how many applications you\'ve created — calculated separately for referred vs. non-referred applications so you can see exactly how much referrals help.',
       'Interviews: the total number of interviews you\'ve received across every application, not just the ones currently in the interview stage — every completed round counts, even after that application moves on to an offer, a rejection, or elsewhere.',
       'Counts for offers, rejections, and applications that have gone quiet (ghosted).',
-      'A follow-ups-needed heuristic that flags applications likely due for a nudge.',
+      "Follow-ups needed: how many applications ApplyIQ's follow-up model says need action right now — the same list as the Follow-Ups page.",
+      'An Upcoming follow-ups card listing the applications to check in on now, and an Applications needing attention card ranking active applications by ghosting risk.',
       'Visual status breakdown across your whole pipeline.',
       'Weekly application activity trend, so you can see if your search is speeding up or slowing down.',
       'A dedicated analytics view adds response-rate-by-source breakdowns, so you know whether LinkedIn, referrals, or job boards are actually converting for you.',
@@ -79,6 +81,10 @@ const CORE_FEATURES: FeatureDetail[] = [
       'Every account is protected by JWT-based authentication and bcrypt-hashed passwords — your password is never stored in plain text.',
       'Data is fully isolated per account: there is no way for one user to view, edit, or even discover another user\'s applications or resumes.',
       'Sessions are stateless and short-lived by design, limiting the impact if a token were ever compromised.',
+      'Optional two-factor authentication with any authenticator app (Google Authenticator, Authy, 1Password), plus one-time recovery codes in case you lose your phone.',
+      'Connecting Gmail requires two-factor authentication and re-entering your password, and sending is capped at 20 emails an hour, so a stolen login can\'t be turned into a way to send mail as you.',
+      'Repeated wrong passwords or codes are locked out for 15 minutes, per account and per network.',
+      'A connected Gmail account is stored as AES-256-GCM-encrypted OAuth tokens, never your Google password, with only the two permissions ApplyIQ needs (read and send). Disconnecting revokes access with Google.',
     ],
   },
 ];
@@ -119,9 +125,13 @@ const AI_FEATURES: FeatureDetail[] = [
     title: 'Follow-Up Recommendations',
     summary: 'Never wonder whether it\'s time to check in on an application again.',
     points: [
-      'Continuously watches every open application — days since you applied, days since your last contact, and current pipeline stage.',
-      'Recommends a specific next action: send a first follow-up, send a final follow-up, keep waiting, or archive.',
-      'Explains its reasoning in plain language every time, so you understand exactly why it\'s suggesting that action.',
+      'A decision tree model watches every open application: days since you applied, days since your last contact, follow-ups already sent, pipeline stage, referral, priority, and interview rounds completed.',
+      'Recommends a specific next action: send a first follow-up, send a final follow-up, mark as likely ghosted, move to rejected, or archive.',
+      'Explains every recommendation with the exact factors the model used, e.g. "14 days since last contact (model range: 10–35)", plus how confident it is.',
+      'One click acts on it: ghosted and rejected actions update the application\'s status, and "Mark as done" clears it until the model recommends something new.',
+      'Drafts: save your own plain-text follow-up templates (title, type, and message), edit them any time, and pick one when you follow up. [Recruiter], [Role], [Company], and [Name] fill in automatically.',
+      'Send the follow-up straight from your connected Gmail, or copy it and mark it sent yourself. Either way it\'s logged, the model\'s clock resets, and a notification lands in your bell.',
+      'Add your own follow-ups for anything the model doesn\'t cover.',
     ],
   },
   {
@@ -129,8 +139,25 @@ const AI_FEATURES: FeatureDetail[] = [
     title: 'Ghosting Risk Prediction',
     summary: 'Stop spending energy chasing dead leads.',
     points: [
-      'Every application is scored on how likely it is to have gone quiet for good.',
+      'Every active application gets a 0-100% ghosting risk score from a second decision tree model, based on how long it\'s been quiet, follow-ups already sent, referrals, and interview progress.',
+      'Follow-Ups ranks recommendations riskiest first, and the dashboard shows the applications most at risk right now.',
       'Helps you triage your job search and refocus your time on applications that are still genuinely active.',
+    ],
+  },
+];
+
+const AUTOMATION_FEATURES: FeatureDetail[] = [
+  {
+    icon: MailCheck,
+    title: 'Gmail Sync',
+    summary: 'Connect Gmail once and your application tracker keeps itself up to date from your inbox.',
+    points: [
+      'Connect with Google from Settings. ApplyIQ never sees your Google password, and you can disconnect any time.',
+      'Auto-add applications: when an "application received" email arrives (including LinkedIn Easy Apply confirmations), ApplyIQ adds it as Applied with the company, role, and date pulled from the email. If you\'d saved that job already, it moves to Applied instead.',
+      'Auto-update statuses: an interview invitation moves the matching application to Interviewing, and a rejection moves it to Rejected. Applications already further along are never moved backwards.',
+      'Every change shows up in your notification bell, so you always know what was updated and why.',
+      'Checks your inbox every 15 minutes, or on demand with one click. The first sync looks back 14 days so recent emails are picked up straight away.',
+      'Each automation has its own on/off switch. ApplyIQ only reads recruiting-related mail, and never deletes, archives, or changes anything in your inbox.',
     ],
   },
 ];
@@ -212,6 +239,17 @@ export function FeaturesPage() {
             </h2>
             <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
               {AI_FEATURES.map((feature) => (
+                <FeatureDetailBlock key={feature.title} feature={feature} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-sm font-semibold tracking-widest text-white/40 uppercase">
+              Automation
+            </h2>
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {AUTOMATION_FEATURES.map((feature) => (
                 <FeatureDetailBlock key={feature.title} feature={feature} />
               ))}
             </div>

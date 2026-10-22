@@ -2,18 +2,25 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Moon, Sun } from 'lucide-react';
 
+import { EmailAccountsCard } from '@/components/app/email-accounts-card';
+import { TwoFactorCard } from '@/components/app/two-factor-card';
 import { PageHeader } from '@/components/app/page-header';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useTheme } from '@/context/theme-context';
+import { loadNotificationSettings, saveNotificationSettings, type NotificationSetting } from '@/lib/notification-store';
 
-const NOTIFICATION_SETTINGS = [
+const NOTIFICATION_SETTINGS: { id: NotificationSetting; label: string; description: string }[] = [
   { id: 'followUps', label: 'Follow-up reminders', description: 'Get notified when ApplyIQ recommends a follow-up.' },
   { id: 'matchScores', label: 'Resume match results', description: 'Get notified when a resume match analysis finishes.' },
+  {
+    id: 'interviewPrep',
+    label: 'Interview prep ready',
+    description: 'Get notified when interview prep you started finishes generating while you are on another page.',
+  },
   { id: 'weeklyDigest', label: 'Weekly digest', description: 'A weekly summary of your application activity.' },
 ];
 
@@ -44,17 +51,17 @@ function loadFollowUpSettings(): Record<string, boolean> {
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const [notifications, setNotifications] = useState<Record<string, boolean>>({
-    followUps: true,
-    matchScores: true,
-    weeklyDigest: false,
-  });
+  const [notifications, setNotifications] = useState(loadNotificationSettings);
 
   const [followUps, setFollowUps] = useState(loadFollowUpSettings);
 
   useEffect(() => {
     localStorage.setItem(FOLLOW_UP_STORAGE_KEY, JSON.stringify(followUps));
   }, [followUps]);
+
+  useEffect(() => {
+    saveNotificationSettings(notifications);
+  }, [notifications]);
 
   const handleDeleteAccount = () => {
     if (!window.confirm("Delete your account? This can't be undone.")) return;
@@ -132,14 +139,10 @@ export function SettingsPage() {
           </Card>
         </div>
 
-        <Card className="flex-1">
+        <div className="flex flex-1 flex-col gap-6">
+        <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Follow-Ups</h2>
-              <Badge variant="outline" className="border-amber-400/40 text-amber-500 dark:text-amber-400">
-                Coming soon
-              </Badge>
-            </div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Follow-Ups</h2>
             <p className="text-sm text-slate-500 dark:text-white/50">
               Your choices are saved, but no emails are sent automatically yet.
             </p>
@@ -162,6 +165,11 @@ export function SettingsPage() {
             ))}
           </CardContent>
         </Card>
+
+        <TwoFactorCard />
+
+        <EmailAccountsCard />
+        </div>
       </div>
     </div>
   );

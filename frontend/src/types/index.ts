@@ -68,21 +68,29 @@ export interface ScoredKeyword {
   weight: number; // 1-100: how central this keyword is to the role, higher = more expected
 }
 
-export type RecommendedAction =
-  | 'Send first follow-up'
-  | 'Send final follow-up'
-  | 'Wait longer'
-  | 'Mark as likely ghosted'
-  | 'Move to rejected'
-  | 'Archive application';
+export const RECOMMENDED_ACTIONS = [
+  'Send first follow-up',
+  'Send final follow-up',
+  'Wait longer',
+  'Mark as likely ghosted',
+  'Move to rejected',
+  'Archive application',
+] as const;
+export type RecommendedAction = (typeof RECOMMENDED_ACTIONS)[number];
 
 export interface FollowUpRecommendation {
-  applicationId: string;
+  id: string; // what the done/action/send endpoints take: the application id, or the user-added follow-up's id
+  applicationId: string | null; // null for follow-ups the user added
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
   companyName: string;
   jobTitle: string;
   status: ApplicationStatus;
   daysSinceApplied: number;
   recommendedAction: RecommendedAction;
   reason: string;
+  decisionFactors: string[]; // the decision tree's path, one plain-English factor per feature it split on
   ghostingRiskScore: number;
+  confidence: number; // share of training samples in the leaf that agreed with this action
+  addedByUser: boolean; // created on the Follow-Ups page, not by the model — no factors/risk/confidence
 }

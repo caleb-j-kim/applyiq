@@ -33,6 +33,10 @@ Account records.
 | `last_name` | text | |
 | `email` | text | unique |
 | `password_hash` | text | bcrypt |
+| `totp_secret_enc` | text, nullable | Authenticator-app (TOTP) secret, AES-256-GCM encrypted with `EMAIL_TOKEN_KEY`; set when 2FA setup starts |
+| `totp_enabled` | boolean, default false | Login requires a code once true; required to connect Gmail or send email |
+| `totp_last_step` | bigint, nullable | Last 30-second step a code was accepted for (blocks code replay) |
+| `totp_recovery_hashes` | text, nullable | Comma-separated SHA-256 hashes of unused one-time recovery codes |
 | `created_at` | timestamp | |
 | `updated_at` | timestamp | |
 
@@ -110,9 +114,43 @@ benefit.
 | `suggested_resume_bullets` | text (JSON) | `string[]`, only populated when the caller requests it (extra output tokens) |
 | `created_at` | timestamp | |
 
+### `email_connections`
+A user's linked Gmail inbox for the email automation (`com.applyiq.email`).
+One row per user per provider. Tokens are AES-256-GCM encrypted with
+`EMAIL_TOKEN_KEY`; rotating that key orphans every row (users must reconnect).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `user_id` | UUID | FK → `users.id`; unique with `provider` |
+| `provider` | varchar(16) (enum) | `GMAIL` (the only provider) |
+| `email_address` | text | The connected inbox's address |
+| `refresh_token_enc`, `access_token_enc` | text | Encrypted OAuth tokens |
+| `access_token_expires_at` | timestamp | |
+| `last_synced_at` | timestamp | Next sync reads mail received after this |
+| `auto_update_status`, `auto_add_applications` | boolean | The two automation toggles on Settings |
+| `created_at` | timestamp | |
+
+### `follow_up_drafts`
+Reusable plain-text follow-up emails (Follow-Ups → Drafts): `id`, `user_id` (FK → `users.id`),
+`title`, `subtitle` (nullable), `description` (TEXT), `created_at`.
+
+### `manual_follow_ups`
+Follow-ups the user added by hand; the row is deleted once done or sent: `id`, `user_id`
+(FK → `users.id`), `company_name`, `job_title`, `status` (varchar(32) enum), `date_applied`
+(nullable), `recommended_action` (varchar(64), one of the model's action labels), `note`, `created_at`.
+
+### `follow_up_dismissals`
+"Mark as done" on a model recommendation: `id`, `user_id`, `job_application_id`,
+`recommended_action`, unique together. Plain UUID columns with no FKs, so deleting an
+application isn't blocked; the card returns if the model later recommends a different action.
+
 ## Planned tables (not yet built)
 
 Designed but not implemented — still on hold:
 
 - **`interview_prep`** — generated interview prep material (`technical_questions`, `behavioral_questions`, `skills_to_review`, `project_talking_points`, `sample_answers`), linked to a user + job application.
-- **`follow_up_recommendations`** — model-generated follow-up/status recommendations (`recommended_action`, `recommended_status`, `ghosting_risk_score`, `confidence_score`, `main_reasons`), linked to a user + job application.
+
+Follow-up recommendations are computed on request from `job_applications`
+(`GET /api/follow-ups`) and not stored, so the planned
+`follow_up_recommendations` table was dropped.

@@ -55,3 +55,16 @@ services:
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Email automation + follow-up sending (see docs/EMAIL_OAUTH_SETUP.md)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: EMAIL_TOKEN_KEY
+        sync: false
+      - key: EMAIL_OAUTH_REDIRECT_URI
+        sync: false
+      - key: TZ
+        value: America/Chicago

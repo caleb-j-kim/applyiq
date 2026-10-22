@@ -42,3 +42,14 @@ app:
     base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
     model: ${ANTHROPIC_MODEL:claude-sonnet-5-5}
     max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
+  email:
+    # Where Google sends the consent popup back to. Must exactly match the redirect URI
+    # registered on the Google OAuth client.
+    redirect-uri: ${EMAIL_OAUTH_REDIRECT_URI:http://127.0.0.1:8080/api/email/oauth/callback}
+    # Encrypts stored OAuth tokens. Falls back to the JWT secret so local dev works out of the
+    # box; give it its own value in production. Changing it invalidates every stored connection.
+    token-key: ${EMAIL_TOKEN_KEY:${app.jwt.secret}}
+    sync-interval-ms: ${EMAIL_SYNC_INTERVAL_MS:900000}
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
