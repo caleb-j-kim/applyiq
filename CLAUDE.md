@@ -72,6 +72,11 @@ repo at once. Before starting a task:
    to stay inside, so parallel sessions don't collide on the same files.
 2. If you're running as a separate parallel agent (not just a single
    session doing sequential work), read `docs/MULTI_AGENT_WORKFLOW.md` for
-   the git worktree + branching pattern to use.
+   the git worktree + branching pattern to use, including the branch
+   strategy (`main`/`master` stable, `develop` integration, work branches
+   named `<area>/develop-<slug>`).
 3. CI (`.github/workflows/ci.yml`) runs frontend lint+build and backend
    test+build on every PR — keep changes green before handing off.
+4. `docs/CODEX_HANDOFF.md` and `docs/IMPROVEMENTS_PLAN.md` track
+   in-progress and planned work — check there before starting something
+   new so you don't duplicate another agent's task.
